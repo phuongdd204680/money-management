@@ -233,6 +233,16 @@ export default function App() {
     }));
   };
 
+  // Chỉnh sửa / cập nhật khoản chi cố định
+  const handleUpdateBill = (updatedBill) => {
+    setData(prev => ({
+      ...prev,
+      recurringBills: prev.recurringBills.map(b => 
+        b.id === updatedBill.id ? { ...b, ...updatedBill } : b
+      )
+    }));
+  };
+
   // Xóa khoản chi cố định
   const handleDeleteBill = (billId) => {
     setData(prev => ({
@@ -408,6 +418,7 @@ export default function App() {
               onPayBill={handlePayBill}
               onUnpayBill={handleUnpayBill}
               onAddBill={handleAddBill}
+              onUpdateBill={handleUpdateBill}
               onDeleteBill={handleDeleteBill}
             />
           )}

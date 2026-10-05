@@ -22,11 +22,13 @@ export default function RecurringBillsView({
   onPayBill,
   onUnpayBill,
   onAddBill,
+  onUpdateBill,
   onDeleteBill
 }) {
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editingBill, setEditingBill] = useState(null);
   
-  // State form thêm hoá đơn mới
+  // State form hoá đơn
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [dueDay, setDueDay] = useState('5');
@@ -37,7 +39,40 @@ export default function RecurringBillsView({
   const now = new Date();
   const todayDay = now.getDate();
 
-  const handleCreateBill = (e) => {
+  const handleOpenAddModal = () => {
+    setEditingBill(null);
+    setName('');
+    setAmount('');
+    setDueDay('5');
+    setCategoryId(categories.find(c => c.type === 'expense')?.id || 'cat-rent');
+    setJarId(jars[0]?.id || 'nec');
+    setNote('');
+    setShowModal(true);
+  };
+
+  const handleOpenEditModal = (bill) => {
+    setEditingBill(bill);
+    setName(bill.name || '');
+    setAmount(bill.amount !== undefined ? bill.amount.toString() : '');
+    setDueDay(bill.dueDay ? bill.dueDay.toString() : '5');
+    setCategoryId(bill.categoryId || 'cat-rent');
+    setJarId(bill.jarId || 'nec');
+    setNote(bill.note || '');
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingBill(null);
+    setName('');
+    setAmount('');
+    setDueDay('5');
+    setCategoryId('cat-rent');
+    setJarId('nec');
+    setNote('');
+  };
+
+  const handleSubmitBill = (e) => {
     e.preventDefault();
     const parsedAmt = Number(amount) || 0;
     if (!name.trim() || parsedAmt <= 0) {
@@ -45,23 +80,35 @@ export default function RecurringBillsView({
       return;
     }
 
-    const newBill = {
-      id: `bill-${Date.now()}`,
-      name: name.trim(),
-      amount: parsedAmt,
-      dueDay: parseInt(dueDay, 10) || 1,
-      cycle: 'monthly',
-      categoryId,
-      jarId,
-      note: note.trim(),
-      lastPaidMonth: ''
-    };
+    if (editingBill) {
+      const updatedBill = {
+        ...editingBill,
+        name: name.trim(),
+        amount: parsedAmt,
+        dueDay: parseInt(dueDay, 10) || 1,
+        categoryId,
+        jarId,
+        note: note.trim()
+      };
+      if (onUpdateBill) {
+        onUpdateBill(updatedBill);
+      }
+    } else {
+      const newBill = {
+        id: `bill-${Date.now()}`,
+        name: name.trim(),
+        amount: parsedAmt,
+        dueDay: parseInt(dueDay, 10) || 1,
+        cycle: 'monthly',
+        categoryId,
+        jarId,
+        note: note.trim(),
+        lastPaidMonth: ''
+      };
+      onAddBill(newBill);
+    }
 
-    onAddBill(newBill);
-    setShowAddModal(false);
-    setName('');
-    setAmount('');
-    setNote('');
+    handleCloseModal();
   };
 
   const getCategory = (catId) => {
@@ -91,7 +138,7 @@ export default function RecurringBillsView({
           <button 
             id="btn-add-recurring-bill"
             className="btn btn-primary"
-            onClick={() => setShowAddModal(true)}
+            onClick={handleOpenAddModal}
           >
             <Plus size={16} />
             <span>Thêm khoản chi cố định</span>
@@ -120,7 +167,7 @@ export default function RecurringBillsView({
         {bills.length === 0 ? (
           <div className="empty-state card text-center py-12">
             <p className="text-muted text-lg mb-3">Chưa có khoản chi cố định nào được thiết lập.</p>
-            <button className="btn btn-primary btn-sm" onClick={() => setShowAddModal(true)}>
+            <button className="btn btn-primary btn-sm" onClick={handleOpenAddModal}>
               + Thêm khoản chi cố định đầu tiên
             </button>
           </div>
@@ -219,18 +266,28 @@ export default function RecurringBillsView({
                     </button>
                   )}
 
-                  <button 
-                    id={`btn-del-bill-${bill.id}`}
-                    className="btn-icon-sm text-muted hover-danger ml-auto"
-                    onClick={() => {
-                      if (window.confirm(`Bạn có muốn xóa khoản chi cố định "${bill.name}" không?`)) {
-                        onDeleteBill(bill.id);
-                      }
-                    }}
-                    title="Xóa khoản chi cố định này"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="action-buttons-wrap ml-auto">
+                    <button 
+                      id={`btn-edit-bill-${bill.id}`}
+                      className="btn-icon-sm text-muted hover-primary"
+                      onClick={() => handleOpenEditModal(bill)}
+                      title="Chỉnh sửa khoản chi cố định"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button 
+                      id={`btn-del-bill-${bill.id}`}
+                      className="btn-icon-sm text-muted hover-danger"
+                      onClick={() => {
+                        if (window.confirm(`Bạn có muốn xóa khoản chi cố định "${bill.name}" không?`)) {
+                          onDeleteBill(bill.id);
+                        }
+                      }}
+                      title="Xóa khoản chi cố định này"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -238,19 +295,28 @@ export default function RecurringBillsView({
         )}
       </div>
 
-      {/* 3. Modal Thêm Khoản Chi Cố Định Mới */}
-      {showAddModal && (
-        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+      {/* 3. Modal Thêm / Chỉnh Sửa Khoản Chi Cố Định */}
+      {showModal && (
+        <div className="modal-overlay" onClick={handleCloseModal}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3 className="modal-title flex-center gap-2">
-                <CalendarClock size={20} className="text-primary-color" />
-                Thêm Khoản Chi Cố Định Định Kỳ
+                {editingBill ? (
+                  <>
+                    <Edit3 size={20} className="text-primary-color" />
+                    <span>Chỉnh Sửa Khoản Chi Cố Định</span>
+                  </>
+                ) : (
+                  <>
+                    <CalendarClock size={20} className="text-primary-color" />
+                    <span>Thêm Khoản Chi Cố Định Định Kỳ</span>
+                  </>
+                )}
               </h3>
-              <button className="btn-icon btn-ghost" onClick={() => setShowAddModal(false)}>✕</button>
+              <button className="btn-icon btn-ghost" onClick={handleCloseModal}>✕</button>
             </div>
 
-            <form onSubmit={handleCreateBill} className="modal-body">
+            <form onSubmit={handleSubmitBill} className="modal-body">
               <div className="form-group">
                 <label className="form-label">Tên khoản chi *</label>
                 <input
@@ -284,6 +350,7 @@ export default function RecurringBillsView({
                 <div className="form-group">
                   <label className="form-label">Ngày đến hạn hàng tháng *</label>
                   <select
+                    id="select-new-bill-dueday"
                     className="form-control"
                     value={dueDay}
                     onChange={e => setDueDay(e.target.value)}
@@ -299,6 +366,7 @@ export default function RecurringBillsView({
                 <div className="form-group">
                   <label className="form-label">Danh mục chi tiêu</label>
                   <select
+                    id="select-new-bill-category"
                     className="form-control"
                     value={categoryId}
                     onChange={e => setCategoryId(e.target.value)}
@@ -312,6 +380,7 @@ export default function RecurringBillsView({
                 <div className="form-group">
                   <label className="form-label">Hũ tài chính liên kết</label>
                   <select
+                    id="select-new-bill-jar"
                     className="form-control"
                     value={jarId}
                     onChange={e => setJarId(e.target.value)}
@@ -326,6 +395,7 @@ export default function RecurringBillsView({
               <div className="form-group">
                 <label className="form-label">Ghi chú thêm</label>
                 <input
+                  id="input-new-bill-note"
                   type="text"
                   className="form-control"
                   placeholder="VD: Chuyển khoản số tài khoản 123456... trước ngày 5"
@@ -335,12 +405,12 @@ export default function RecurringBillsView({
               </div>
 
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
+                <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
                   Hủy bỏ
                 </button>
                 <button id="btn-submit-new-bill" type="submit" className="btn btn-primary">
                   <Check size={16} />
-                  <span>Thêm khoản chi cố định</span>
+                  <span>{editingBill ? 'Lưu thay đổi' : 'Thêm khoản chi cố định'}</span>
                 </button>
               </div>
             </form>
