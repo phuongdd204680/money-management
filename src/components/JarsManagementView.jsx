@@ -8,7 +8,11 @@ import {
   ArrowRightLeft, 
   Info,
   DollarSign,
-  Sparkles
+  Sparkles,
+  Briefcase,
+  Laptop,
+  PlusCircle,
+  TrendingUp
 } from 'lucide-react';
 import Icon from './Icon';
 import { formatCurrency } from '../services/storage';
@@ -16,9 +20,11 @@ import { formatCurrency } from '../services/storage';
 export default function JarsManagementView({
   jars = [],
   stats,
-  monthlyIncomeTarget = 25000000,
+  settings = {},
+  categories = [],
+  monthlyIncomeTarget = 0,
   onUpdateJars,
-  onUpdateIncomeTarget,
+  onUpdateIncomeSettings,
   onOpenTxModal,
   onQuickAllocateIncome
 }) {
@@ -36,23 +42,41 @@ export default function JarsManagementView({
     return b;
   });
 
-  // State mục tiêu thu nhập ban đầu (an toàn tuyệt đối trước null / undefined)
-  const [incomeTargetInput, setIncomeTargetInput] = useState(() => {
-    if (monthlyIncomeTarget !== null && monthlyIncomeTarget !== undefined) {
-      return String(monthlyIncomeTarget);
+  // State lương cố định & thu nhập ngoài lương dự kiến
+  const [salaryInput, setSalaryInput] = useState(() => {
+    if (settings?.salaryAmount !== undefined && settings?.salaryAmount !== null && settings?.salaryAmount > 0) {
+      return String(settings.salaryAmount);
     }
-    return '25000000';
+    if (monthlyIncomeTarget > 0) return String(monthlyIncomeTarget);
+    return '';
   });
 
+  const [extraIncomeInput, setExtraIncomeInput] = useState(() => {
+    if (settings?.extraIncomeTarget !== undefined && settings?.extraIncomeTarget !== null && settings?.extraIncomeTarget > 0) {
+      return String(settings.extraIncomeTarget);
+    }
+    return '';
+  });
+
+  const [selectedExtraCatId, setSelectedExtraCatId] = useState('cat-freelance');
   const [isSaved, setIsSaved] = useState(false);
   const [incomeTargetSaved, setIncomeTargetSaved] = useState(false);
 
-  // Cập nhật lại input nếu prop monthlyIncomeTarget từ bên ngoài thay đổi
+  // Cập nhật lại input nếu settings từ bên ngoài thay đổi
   React.useEffect(() => {
-    if (monthlyIncomeTarget !== null && monthlyIncomeTarget !== undefined) {
-      setIncomeTargetInput(String(monthlyIncomeTarget));
+    if (settings?.salaryAmount !== undefined && settings?.salaryAmount !== null) {
+      setSalaryInput(settings.salaryAmount > 0 ? String(settings.salaryAmount) : '');
+    } else if (monthlyIncomeTarget > 0) {
+      setSalaryInput(String(monthlyIncomeTarget));
     }
-  }, [monthlyIncomeTarget]);
+    if (settings?.extraIncomeTarget !== undefined && settings?.extraIncomeTarget !== null) {
+      setExtraIncomeInput(settings.extraIncomeTarget > 0 ? String(settings.extraIncomeTarget) : '');
+    }
+  }, [settings, monthlyIncomeTarget]);
+
+  // Danh sách các danh mục thu nhập ngoài lương
+  const incomeCategories = categories.filter(c => c.type === 'income');
+  const extraIncomeCategories = incomeCategories.filter(c => c.id !== 'cat-salary');
 
   // Tính tổng % hiện tại
   const totalPercent = Object.values(editingPercents).reduce((acc, val) => acc + (Number(val) || 0), 0);
@@ -70,31 +94,39 @@ export default function JarsManagementView({
     setEditingBudgets(prev => ({ ...prev, [id]: num }));
   };
 
+  const parsedSalary = Math.max(0, Number(salaryInput) || 0);
+  const parsedExtraIncome = Math.max(0, Number(extraIncomeInput) || 0);
+  const totalTargetIncome = parsedSalary + parsedExtraIncome;
+  const activeIncomeBase = totalTargetIncome > 0 ? totalTargetIncome : parsedSalary;
+
   // Tự động tính lại hạn mức ngân sách của 6 hũ dựa trên thu nhập dự kiến
   const handleApplyIncomeToBudgets = () => {
-    const incomeVal = Math.max(0, Number(incomeTargetInput) || 0);
-    if (incomeVal <= 0) {
-      alert('Vui lòng nhập số tiền thu nhập hợp lệ lớn hơn 0');
+    if (activeIncomeBase <= 0) {
+      alert('Vui lòng nhập mức lương hoặc thu nhập dự kiến lớn hơn 0 để tính ngân sách');
       return;
     }
 
     const newBudgets = {};
     jars.forEach(j => {
       const pct = editingPercents[j.id] ?? j.percent;
-      newBudgets[j.id] = Math.round((incomeVal * pct) / 100);
+      newBudgets[j.id] = Math.round((activeIncomeBase * pct) / 100);
     });
 
     setEditingBudgets(newBudgets);
 
-    // Cập nhật cả jars và income target
+    // Cập nhật cả jars và settings
     const updatedJars = jars.map(j => ({
       ...j,
       defaultBudget: newBudgets[j.id]
     }));
 
     onUpdateJars(updatedJars);
-    if (onUpdateIncomeTarget) {
-      onUpdateIncomeTarget(incomeVal);
+    if (onUpdateIncomeSettings) {
+      onUpdateIncomeSettings({
+        salaryAmount: parsedSalary,
+        extraIncomeTarget: parsedExtraIncome,
+        monthlyIncomeTarget: totalTargetIncome
+      });
     }
 
     setIncomeTargetSaved(true);
@@ -132,8 +164,6 @@ export default function JarsManagementView({
     setTimeout(() => setIsSaved(false), 3000);
   };
 
-  const parsedIncomeTarget = Math.max(0, Number(incomeTargetInput) || 0);
-
   return (
     <div className="jars-view-container">
       {/* 1. Header Banner & Methodology Info */}
@@ -162,72 +192,172 @@ export default function JarsManagementView({
         </div>
       </div>
 
-      {/* 2. KHỐI KHAI BÁO THU NHẬP BAN ĐẦU */}
+      {/* 2. KHỐI KHAI BÁO THU NHẬP ĐA NGUỒN (LƯƠNG + NGOÀI LƯƠNG) */}
       <div className="card mb-4 income-setup-banner">
-        <div className="flex-between flex-wrap gap-4">
-          <div className="flex-1 min-w-300">
-            <div className="flex-center gap-2 mb-1">
-              <Sparkles size={18} className="text-warning" />
-              <h3 className="card-subheading">Khai Báo Thu Nhập Dự Kiến Hàng Tháng (Lương / Thu Nhập Cố Định)</h3>
-            </div>
-            <p className="text-muted text-xs">
-              Điền mức thu nhập cố định hàng tháng của bạn để hệ thống tự động tính ra ngân sách chi tiêu tối đa cho từng hũ.
-            </p>
+        <div className="income-setup-header flex-between flex-wrap gap-2 mb-3">
+          <div className="flex-center gap-2">
+            <Sparkles size={20} className="text-warning" />
+            <h3 className="card-subheading">Khai Báo Thu Nhập Hàng Tháng (Lương & Nguồn Khác)</h3>
+          </div>
+          <span className="text-xs text-muted">
+            Tự do cấu hình mức lương và thu nhập phụ để hệ thống tính hạn mức 6 hũ
+          </span>
+        </div>
 
-            <div className="income-input-group mt-3">
-              <div className="input-with-currency">
-                <input
-                  id="input-monthly-income-target"
-                  type="number"
-                  step="500000"
-                  min="0"
-                  className="form-control income-target-field"
-                  placeholder="VD: 20000000"
-                  value={incomeTargetInput}
-                  onChange={e => {
-                    setIncomeTargetInput(e.target.value);
-                    setIncomeTargetSaved(false);
-                  }}
-                />
-                <span className="currency-tag">VNĐ / tháng</span>
+        {/* Lưới 2 cột: Lương chính thức và Thu nhập ngoài lương */}
+        <div className="income-sources-grid mb-3">
+          {/* Cột 1: Lương cố định */}
+          <div className="income-source-card">
+            <div className="income-source-title">
+              <div className="flex-center gap-2">
+                <Briefcase size={16} className="text-success" />
+                <span className="font-semibold text-sm">Lương Cố Định Hàng Tháng</span>
               </div>
-
-              <button
-                id="btn-apply-income-budgets"
-                className="btn btn-primary btn-sm"
-                onClick={handleApplyIncomeToBudgets}
-              >
-                <Check size={16} />
-                <span>{incomeTargetSaved ? 'Đã áp dụng thành công!' : 'Tự động tính ngân sách 6 hũ'}</span>
-              </button>
-
-              <button
-                id="btn-quick-record-income"
-                className="btn btn-success btn-sm"
-                onClick={() => {
-                  if (onQuickAllocateIncome) {
-                    onQuickAllocateIncome(parsedIncomeTarget);
-                  } else {
-                    onOpenTxModal({ defaultType: 'income' });
-                  }
+              <span className="badge badge-salary">
+                <span className="badge-dot"></span>
+                Lương chính
+              </span>
+            </div>
+            <p className="text-xs text-muted mb-2">Mức lương thực nhận định kỳ mỗi tháng</p>
+            <div className="input-with-currency">
+              <input
+                id="input-monthly-salary"
+                type="number"
+                step="500000"
+                min="0"
+                className="form-control income-target-field"
+                placeholder="VD: 25000000"
+                value={salaryInput}
+                onChange={e => {
+                  setSalaryInput(e.target.value);
+                  setIncomeTargetSaved(false);
                 }}
-                title="Ghi nhận ngay khoản thu nhập này vào tháng đang chọn"
-              >
-                <DollarSign size={16} />
-                <span>+ Nạp thu nhập vào tháng này</span>
-              </button>
+              />
+              <span className="currency-tag">VNĐ / tháng</span>
+            </div>
+            {parsedSalary > 0 && (
+              <div className="mt-2 flex-between">
+                <span className="text-xs text-muted">Đang đặt: <b>{formatCurrency(parsedSalary)}</b></span>
+                <button
+                  type="button"
+                  className="btn-link text-xs text-success"
+                  onClick={() => onQuickAllocateIncome && onQuickAllocateIncome(parsedSalary, 'cat-salary', 'Lương cố định')}
+                  title="Nạp ngay khoản lương này vào tháng hiện tại"
+                >
+                  + Nạp Lương ngay
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Cột 2: Thu nhập ngoài lương */}
+          <div className="income-source-card">
+            <div className="income-source-title">
+              <div className="flex-center gap-2">
+                <Laptop size={16} className="text-warning" />
+                <span className="font-semibold text-sm">Thu Nhập Ngoài Lương Dự Kiến</span>
+              </div>
+              <span className="badge badge-extra">
+                <span className="badge-dot"></span>
+                Ngoài lương
+              </span>
+            </div>
+            <p className="text-xs text-muted mb-2">Thù lao freelance, kinh doanh nghề tay trái, đầu tư...</p>
+            <div className="input-with-currency">
+              <input
+                id="input-extra-income-target"
+                type="number"
+                step="500000"
+                min="0"
+                className="form-control income-target-field"
+                placeholder="VD: 5000000 (nếu có)"
+                value={extraIncomeInput}
+                onChange={e => {
+                  setExtraIncomeInput(e.target.value);
+                  setIncomeTargetSaved(false);
+                }}
+              />
+              <span className="currency-tag">VNĐ / tháng</span>
+            </div>
+            <div className="mt-2 flex-between flex-wrap gap-2">
+              <span className="text-xs text-muted">
+                {parsedExtraIncome > 0 ? (
+                  <>Dự kiến: <b>{formatCurrency(parsedExtraIncome)}</b></>
+                ) : (
+                  <span>Tùy chọn, để trống nếu không có</span>
+                )}
+              </span>
+              {parsedExtraIncome > 0 && (
+                <div className="flex-center gap-1">
+                  {extraIncomeCategories.length > 0 && (
+                    <select
+                      className="form-control form-control-xs select-quick-cat"
+                      value={selectedExtraCatId}
+                      onChange={e => setSelectedExtraCatId(e.target.value)}
+                    >
+                      {extraIncomeCategories.map(c => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  )}
+                  <button
+                    type="button"
+                    className="btn-link text-xs text-warning"
+                    onClick={() => {
+                      const selectedCat = extraIncomeCategories.find(c => c.id === selectedExtraCatId);
+                      const catName = selectedCat ? selectedCat.name : 'Thu nhập ngoài';
+                      onQuickAllocateIncome && onQuickAllocateIncome(parsedExtraIncome, selectedExtraCatId, catName);
+                    }}
+                    title="Nạp ngay khoản thu nhập ngoài này vào tháng"
+                  >
+                    + Nạp ngay
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Preview chia tiền theo thu nhập dự kiến */}
-        {parsedIncomeTarget > 0 && (
+        {/* Thanh Tổng Hợp Thu Nhập & Nút Hành Động */}
+        <div className="income-summary-bar flex-between flex-wrap gap-3">
+          <div className="income-total-stat">
+            <span className="text-xs text-muted">Tổng Thu Nhập Dự Kiến:</span>
+            <div className="total-target-highlight">
+              {formatCurrency(totalTargetIncome)}
+              <span className="text-xs text-muted font-normal"> / tháng</span>
+            </div>
+          </div>
+
+          <div className="income-actions-wrap flex-center flex-wrap gap-2">
+            <button
+              id="btn-apply-income-budgets"
+              className="btn btn-primary btn-sm"
+              onClick={handleApplyIncomeToBudgets}
+              disabled={activeIncomeBase <= 0}
+            >
+              <Check size={16} />
+              <span>{incomeTargetSaved ? 'Đã lưu & áp dụng thành công!' : 'Tự động tính ngân sách 6 hũ'}</span>
+            </button>
+
+            <button
+              id="btn-open-income-modal"
+              className="btn btn-ghost btn-sm"
+              onClick={() => onOpenTxModal({ defaultType: 'income' })}
+            >
+              <PlusCircle size={16} />
+              <span>Ghi khoản thu nhập khác</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Dải gợi ý phân bổ tiền theo 6 hũ */}
+        {activeIncomeBase > 0 && (
           <div className="income-split-preview-strip mt-3">
-            <span className="text-xs text-muted font-semibold">Gợi ý phân bổ:</span>
+            <span className="text-xs text-muted font-semibold">Gợi ý ngân sách theo thu nhập dự kiến:</span>
             <div className="preview-jars-row">
               {safeJars.map(j => {
                 const pct = editingPercents[j.id] ?? j.percent;
-                const amt = Math.round((parsedIncomeTarget * pct) / 100);
+                const amt = Math.round((activeIncomeBase * pct) / 100);
                 return (
                   <div key={j.id} className="preview-jar-chip">
                     <span className="chip-dot" style={{ backgroundColor: j.color }}></span>

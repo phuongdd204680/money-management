@@ -87,8 +87,9 @@ export const DEFAULT_CATEGORIES = [
 
   // Danh mục thu nhập
   { id: 'cat-salary', name: 'Lương cố định', jarId: 'all', type: 'income', isFixed: true, icon: 'Briefcase', color: '#10b981' },
-  { id: 'cat-bonus', name: 'Thưởng & Hoa hồng', jarId: 'all', type: 'income', isFixed: false, icon: 'Award', color: '#10b981' },
   { id: 'cat-freelance', name: 'Làm thêm / Freelance', jarId: 'all', type: 'income', isFixed: false, icon: 'Laptop', color: '#10b981' },
+  { id: 'cat-bonus', name: 'Thưởng & Hoa hồng', jarId: 'all', type: 'income', isFixed: false, icon: 'Award', color: '#10b981' },
+  { id: 'cat-business', name: 'Kinh doanh / Nghề tay trái', jarId: 'all', type: 'income', isFixed: false, icon: 'ShoppingBag', color: '#10b981' },
   { id: 'cat-interest', name: 'Lãi đầu tư / Cổ tức', jarId: 'all', type: 'income', isFixed: false, icon: 'DollarSign', color: '#10b981' },
   { id: 'cat-other-inc', name: 'Thu nhập khác', jarId: 'all', type: 'income', isFixed: false, icon: 'PlusCircle', color: '#10b981' }
 ];
@@ -330,6 +331,8 @@ export function generateDemoData() {
     recurringBills: updatedBills,
     settings: {
       currency: 'VND',
+      salaryAmount: 26000000,
+      extraIncomeTarget: 4000000,
       monthlyIncomeTarget: 30000000,
       theme: 'dark'
     }

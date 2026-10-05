@@ -26,6 +26,8 @@ export default function DashboardView({
 }) {
   const {
     totalIncome,
+    totalSalaryIncome,
+    totalOtherIncome,
     totalExpense,
     totalFixedExpense,
     totalVariableExpense,
@@ -70,6 +72,22 @@ export default function DashboardView({
             </div>
           </div>
           <div className="stat-value text-success">{formatCurrency(totalIncome)}</div>
+          {totalIncome > 0 && (totalSalaryIncome > 0 || totalOtherIncome > 0) && (
+            <div className="stat-breakdown">
+              {totalSalaryIncome > 0 && (
+                <div className="breakdown-item">
+                  <span className="dot dot-fixed" style={{ backgroundColor: '#10b981' }}></span>
+                  <span className="breakdown-text">Lương: {formatCurrency(totalSalaryIncome)}</span>
+                </div>
+              )}
+              {totalOtherIncome > 0 && (
+                <div className="breakdown-item">
+                  <span className="dot dot-variable" style={{ backgroundColor: '#f59e0b' }}></span>
+                  <span className="breakdown-text">Khác: {formatCurrency(totalOtherIncome)}</span>
+                </div>
+              )}
+            </div>
+          )}
           <div className="stat-footer">
             {data.settings?.monthlyIncomeTarget > 0 ? (
               <div className="flex-between text-xs">

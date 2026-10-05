@@ -60,6 +60,8 @@ export function computeFinancialStats(data, selectedMonth) {
     : transactions;
 
   let totalIncome = 0;
+  let totalSalaryIncome = 0;
+  let totalOtherIncome = 0;
   let totalExpense = 0;
   let totalFixedExpense = 0;
   let totalVariableExpense = 0;
@@ -81,6 +83,11 @@ export function computeFinancialStats(data, selectedMonth) {
     const amt = Number(tx.amount) || 0;
     if (tx.type === 'income') {
       totalIncome += amt;
+      if (tx.categoryId === 'cat-salary') {
+        totalSalaryIncome += amt;
+      } else {
+        totalOtherIncome += amt;
+      }
       // Nếu có phân bổ chi tiết theo 6 hũ
       if (tx.splitJars && Array.isArray(tx.splitJars)) {
         tx.splitJars.forEach(s => {
@@ -149,6 +156,8 @@ export function computeFinancialStats(data, selectedMonth) {
 
   return {
     totalIncome,
+    totalSalaryIncome,
+    totalOtherIncome,
     totalExpense,
     totalFixedExpense,
     totalVariableExpense,
