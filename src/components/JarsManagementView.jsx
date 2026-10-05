@@ -13,7 +13,7 @@ import Icon from './Icon';
 import { formatCurrency } from '../services/storage';
 
 export default function JarsManagementView({
-  jars,
+  jars = [],
   stats,
   monthlyIncomeTarget = 25000000,
   onUpdateJars,
@@ -21,22 +21,37 @@ export default function JarsManagementView({
   onOpenTxModal,
   onQuickAllocateIncome
 }) {
+  const safeJars = Array.isArray(jars) ? jars : [];
+
   const [editingPercents, setEditingPercents] = useState(() => {
     const p = {};
-    jars.forEach(j => { p[j.id] = j.percent; });
+    safeJars.forEach(j => { if (j && j.id) p[j.id] = j.percent ?? 0; });
     return p;
   });
 
   const [editingBudgets, setEditingBudgets] = useState(() => {
     const b = {};
-    jars.forEach(j => { b[j.id] = j.defaultBudget || 0; });
+    safeJars.forEach(j => { if (j && j.id) b[j.id] = j.defaultBudget ?? 0; });
     return b;
   });
 
-  // State mục tiêu thu nhập ban đầu
-  const [incomeTargetInput, setIncomeTargetInput] = useState(monthlyIncomeTarget.toString());
+  // State mục tiêu thu nhập ban đầu (an toàn tuyệt đối trước null / undefined)
+  const [incomeTargetInput, setIncomeTargetInput] = useState(() => {
+    if (monthlyIncomeTarget !== null && monthlyIncomeTarget !== undefined) {
+      return String(monthlyIncomeTarget);
+    }
+    return '25000000';
+  });
+
   const [isSaved, setIsSaved] = useState(false);
   const [incomeTargetSaved, setIncomeTargetSaved] = useState(false);
+
+  // Cập nhật lại input nếu prop monthlyIncomeTarget từ bên ngoài thay đổi
+  React.useEffect(() => {
+    if (monthlyIncomeTarget !== null && monthlyIncomeTarget !== undefined) {
+      setIncomeTargetInput(String(monthlyIncomeTarget));
+    }
+  }, [monthlyIncomeTarget]);
 
   // Tính tổng % hiện tại
   const totalPercent = Object.values(editingPercents).reduce((acc, val) => acc + (Number(val) || 0), 0);
@@ -209,7 +224,7 @@ export default function JarsManagementView({
           <div className="income-split-preview-strip mt-3">
             <span className="text-xs text-muted font-semibold">Gợi ý phân bổ:</span>
             <div className="preview-jars-row">
-              {jars.map(j => {
+              {safeJars.map(j => {
                 const pct = editingPercents[j.id] ?? j.percent;
                 const amt = Math.round((parsedIncomeTarget * pct) / 100);
                 return (
@@ -274,8 +289,8 @@ export default function JarsManagementView({
 
         {/* Danh sách 6 Hũ dạng Grid thẻ cấu hình */}
         <div className="jars-settings-grid">
-          {jars.map(jar => {
-            const jarStat = stats.jarStats[jar.id] || {};
+          {safeJars.map(jar => {
+            const jarStat = (stats && stats.jarStats && stats.jarStats[jar.id]) || {};
             const currentPct = editingPercents[jar.id] ?? jar.percent;
             const currentBgt = editingBudgets[jar.id] ?? (jar.defaultBudget || 0);
 

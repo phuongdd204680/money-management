@@ -27,6 +27,7 @@ import AnalyticsView from './components/AnalyticsView';
 import TransactionModal from './components/TransactionModal';
 import SettingsModal from './components/SettingsModal';
 import AuthModal from './components/AuthModal';
+import ErrorBoundary from './components/ErrorBoundary';
 
 export default function App() {
   // Dữ liệu ứng dụng
@@ -353,61 +354,63 @@ export default function App() {
       />
 
       {/* 2. Main Content Views */}
-      <main className="main-content">
-        {activeTab === 'dashboard' && (
-          <DashboardView
-            stats={stats}
-            data={data}
-            onOpenTxModal={handleOpenTxModal}
-            setActiveTab={setActiveTab}
-            onPayBill={handlePayBill}
-          />
-        )}
+      <ErrorBoundary key={activeTab} onReset={() => setActiveTab('dashboard')}>
+        <main className="main-content">
+          {activeTab === 'dashboard' && (
+            <DashboardView
+              stats={stats}
+              data={data}
+              onOpenTxModal={handleOpenTxModal}
+              setActiveTab={setActiveTab}
+              onPayBill={handlePayBill}
+            />
+          )}
 
-        {activeTab === 'transactions' && (
-          <TransactionsView
-            transactions={stats.filteredTransactions}
-            categories={data.categories}
-            jars={data.jars}
-            onOpenTxModal={handleOpenTxModal}
-            onEditTransaction={handleEditTx}
-            onDeleteTransaction={handleDeleteTransaction}
-            onExportCsv={handleExportCsv}
-          />
-        )}
+          {activeTab === 'transactions' && (
+            <TransactionsView
+              transactions={stats.filteredTransactions}
+              categories={data.categories}
+              jars={data.jars}
+              onOpenTxModal={handleOpenTxModal}
+              onEditTransaction={handleEditTx}
+              onDeleteTransaction={handleDeleteTransaction}
+              onExportCsv={handleExportCsv}
+            />
+          )}
 
-        {activeTab === 'jars' && (
-          <JarsManagementView
-            jars={data.jars}
-            stats={stats}
-            monthlyIncomeTarget={data.settings?.monthlyIncomeTarget || 25000000}
-            onUpdateJars={handleUpdateJars}
-            onUpdateIncomeTarget={handleUpdateIncomeTarget}
-            onOpenTxModal={handleOpenTxModal}
-            onQuickAllocateIncome={handleQuickAllocateIncome}
-          />
-        )}
+          {activeTab === 'jars' && (
+            <JarsManagementView
+              jars={data.jars}
+              stats={stats}
+              monthlyIncomeTarget={data.settings?.monthlyIncomeTarget || 25000000}
+              onUpdateJars={handleUpdateJars}
+              onUpdateIncomeTarget={handleUpdateIncomeTarget}
+              onOpenTxModal={handleOpenTxModal}
+              onQuickAllocateIncome={handleQuickAllocateIncome}
+            />
+          )}
 
-        {activeTab === 'recurring' && (
-          <RecurringBillsView
-            bills={stats.billsWithStatus}
-            selectedMonth={selectedMonth}
-            categories={data.categories}
-            jars={data.jars}
-            onPayBill={handlePayBill}
-            onUnpayBill={handleUnpayBill}
-            onAddBill={handleAddBill}
-            onDeleteBill={handleDeleteBill}
-          />
-        )}
+          {activeTab === 'recurring' && (
+            <RecurringBillsView
+              bills={stats.billsWithStatus}
+              selectedMonth={selectedMonth}
+              categories={data.categories}
+              jars={data.jars}
+              onPayBill={handlePayBill}
+              onUnpayBill={handleUnpayBill}
+              onAddBill={handleAddBill}
+              onDeleteBill={handleDeleteBill}
+            />
+          )}
 
-        {activeTab === 'analytics' && (
-          <AnalyticsView
-            stats={stats}
-            data={data}
-          />
-        )}
-      </main>
+          {activeTab === 'analytics' && (
+            <AnalyticsView
+              stats={stats}
+              data={data}
+            />
+          )}
+        </main>
+      </ErrorBoundary>
 
       {/* 3. Modals */}
       <TransactionModal
