@@ -248,6 +248,43 @@ export default function App() {
     }));
   };
 
+  // Cập nhật mục tiêu thu nhập hàng tháng
+  const handleUpdateIncomeTarget = (newTarget) => {
+    setData(prev => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        monthlyIncomeTarget: newTarget
+      }
+    }));
+  };
+
+  // Nạp nhanh thu nhập định kỳ vào tháng đang chọn và tự động chia 6 hũ
+  const handleQuickAllocateIncome = (amt) => {
+    if (!amt || amt <= 0) return;
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const splits = data.jars.map(j => ({
+      jarId: j.id,
+      amount: Math.round((amt * (j.percent || 0)) / 100)
+    }));
+
+    const newTx = {
+      id: `tx-inc-${Date.now()}`,
+      type: 'income',
+      amount: amt,
+      date: todayStr,
+      categoryId: 'cat-salary',
+      jarId: 'all',
+      isFixed: true,
+      note: `Thu nhập định kỳ tháng ${selectedMonth.split('-')[1]}`,
+      splitJars: splits,
+      createdAt: Date.now()
+    };
+
+    handleSaveTransaction(newTx);
+    alert(`Đã nạp thành công ${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amt)} và tự động chia vào 6 hũ cho tháng này!`);
+  };
+
   // Thêm danh mục mới
   const handleAddCategory = (newCat) => {
     setData(prev => ({
@@ -343,8 +380,11 @@ export default function App() {
           <JarsManagementView
             jars={data.jars}
             stats={stats}
+            monthlyIncomeTarget={data.settings?.monthlyIncomeTarget || 25000000}
             onUpdateJars={handleUpdateJars}
+            onUpdateIncomeTarget={handleUpdateIncomeTarget}
             onOpenTxModal={handleOpenTxModal}
+            onQuickAllocateIncome={handleQuickAllocateIncome}
           />
         )}
 

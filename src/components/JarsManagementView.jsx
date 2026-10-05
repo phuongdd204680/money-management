@@ -15,8 +15,11 @@ import { formatCurrency } from '../services/storage';
 export default function JarsManagementView({
   jars,
   stats,
+  monthlyIncomeTarget = 25000000,
   onUpdateJars,
-  onOpenTxModal
+  onUpdateIncomeTarget,
+  onOpenTxModal,
+  onQuickAllocateIncome
 }) {
   const [editingPercents, setEditingPercents] = useState(() => {
     const p = {};
@@ -30,7 +33,10 @@ export default function JarsManagementView({
     return b;
   });
 
+  // State mục tiêu thu nhập ban đầu
+  const [incomeTargetInput, setIncomeTargetInput] = useState(monthlyIncomeTarget.toString());
   const [isSaved, setIsSaved] = useState(false);
+  const [incomeTargetSaved, setIncomeTargetSaved] = useState(false);
 
   // Tính tổng % hiện tại
   const totalPercent = Object.values(editingPercents).reduce((acc, val) => acc + (Number(val) || 0), 0);
@@ -46,6 +52,37 @@ export default function JarsManagementView({
     setIsSaved(false);
     const num = Math.max(0, parseInt(val, 10) || 0);
     setEditingBudgets(prev => ({ ...prev, [id]: num }));
+  };
+
+  // Tự động tính lại hạn mức ngân sách của 6 hũ dựa trên thu nhập dự kiến
+  const handleApplyIncomeToBudgets = () => {
+    const incomeVal = Math.max(0, Number(incomeTargetInput) || 0);
+    if (incomeVal <= 0) {
+      alert('Vui lòng nhập số tiền thu nhập hợp lệ lớn hơn 0');
+      return;
+    }
+
+    const newBudgets = {};
+    jars.forEach(j => {
+      const pct = editingPercents[j.id] ?? j.percent;
+      newBudgets[j.id] = Math.round((incomeVal * pct) / 100);
+    });
+
+    setEditingBudgets(newBudgets);
+
+    // Cập nhật cả jars và income target
+    const updatedJars = jars.map(j => ({
+      ...j,
+      defaultBudget: newBudgets[j.id]
+    }));
+
+    onUpdateJars(updatedJars);
+    if (onUpdateIncomeTarget) {
+      onUpdateIncomeTarget(incomeVal);
+    }
+
+    setIncomeTargetSaved(true);
+    setTimeout(() => setIncomeTargetSaved(false), 3000);
   };
 
   // Khôi phục mặc định 55-10-10-10-10-5
@@ -79,6 +116,8 @@ export default function JarsManagementView({
     setTimeout(() => setIsSaved(false), 3000);
   };
 
+  const parsedIncomeTarget = Math.max(0, Number(incomeTargetInput) || 0);
+
   return (
     <div className="jars-view-container">
       {/* 1. Header Banner & Methodology Info */}
@@ -107,7 +146,86 @@ export default function JarsManagementView({
         </div>
       </div>
 
-      {/* 2. Bảng Tùy Chỉnh Tỷ Lệ & Ngân Sách */}
+      {/* 2. KHỐI KHAI BÁO THU NHẬP BAN ĐẦU */}
+      <div className="card mb-4 income-setup-banner">
+        <div className="flex-between flex-wrap gap-4">
+          <div className="flex-1 min-w-300">
+            <div className="flex-center gap-2 mb-1">
+              <Sparkles size={18} className="text-warning" />
+              <h3 className="card-subheading">Khai Báo Thu Nhập Dự Kiến Hàng Tháng (Lương / Thu Nhập Cố Định)</h3>
+            </div>
+            <p className="text-muted text-xs">
+              Điền mức thu nhập cố định hàng tháng của bạn để hệ thống tự động tính ra ngân sách chi tiêu tối đa cho từng hũ.
+            </p>
+
+            <div className="income-input-group mt-3">
+              <div className="input-with-currency">
+                <input
+                  id="input-monthly-income-target"
+                  type="number"
+                  step="500000"
+                  min="0"
+                  className="form-control income-target-field"
+                  placeholder="VD: 20000000"
+                  value={incomeTargetInput}
+                  onChange={e => {
+                    setIncomeTargetInput(e.target.value);
+                    setIncomeTargetSaved(false);
+                  }}
+                />
+                <span className="currency-tag">VNĐ / tháng</span>
+              </div>
+
+              <button
+                id="btn-apply-income-budgets"
+                className="btn btn-primary btn-sm"
+                onClick={handleApplyIncomeToBudgets}
+              >
+                <Check size={16} />
+                <span>{incomeTargetSaved ? 'Đã áp dụng thành công!' : 'Tự động tính ngân sách 6 hũ'}</span>
+              </button>
+
+              <button
+                id="btn-quick-record-income"
+                className="btn btn-success btn-sm"
+                onClick={() => {
+                  if (onQuickAllocateIncome) {
+                    onQuickAllocateIncome(parsedIncomeTarget);
+                  } else {
+                    onOpenTxModal({ defaultType: 'income' });
+                  }
+                }}
+                title="Ghi nhận ngay khoản thu nhập này vào tháng đang chọn"
+              >
+                <DollarSign size={16} />
+                <span>+ Nạp thu nhập vào tháng này</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Preview chia tiền theo thu nhập dự kiến */}
+        {parsedIncomeTarget > 0 && (
+          <div className="income-split-preview-strip mt-3">
+            <span className="text-xs text-muted font-semibold">Gợi ý phân bổ:</span>
+            <div className="preview-jars-row">
+              {jars.map(j => {
+                const pct = editingPercents[j.id] ?? j.percent;
+                const amt = Math.round((parsedIncomeTarget * pct) / 100);
+                return (
+                  <div key={j.id} className="preview-jar-chip">
+                    <span className="chip-dot" style={{ backgroundColor: j.color }}></span>
+                    <span className="chip-label">{j.code} ({pct}%):</span>
+                    <span className="chip-amt font-bold" style={{ color: j.color }}>{formatCurrency(amt)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 3. Bảng Tùy Chỉnh Tỷ Lệ & Ngân Sách */}
       <div className="card jars-config-card">
         <div className="config-header">
           <div>

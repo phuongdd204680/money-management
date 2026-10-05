@@ -62,7 +62,7 @@ export default function DashboardView({
       {/* 1. Hàng Thống Kê Tổng Quan */}
       <section className="overview-stats-grid">
         {/* Thu Nhập */}
-        <div className="stat-card stat-income card card-interactive">
+        <div className="stat-card stat-income card card-interactive" onClick={() => setActiveTab('jars')}>
           <div className="stat-card-header">
             <span className="stat-label">Tổng Thu Nhập</span>
             <div className="stat-icon-wrap income-icon">
@@ -70,8 +70,17 @@ export default function DashboardView({
             </div>
           </div>
           <div className="stat-value text-success">{formatCurrency(totalIncome)}</div>
-          <div className="stat-footer text-muted">
-            <span>Tự động phân bổ vào 6 hũ tài chính</span>
+          <div className="stat-footer">
+            {data.settings?.monthlyIncomeTarget > 0 ? (
+              <div className="flex-between text-xs">
+                <span className="text-muted">Mục tiêu: {formatCurrency(data.settings.monthlyIncomeTarget)}</span>
+                <span className="text-success font-semibold">
+                  {Math.round((totalIncome / data.settings.monthlyIncomeTarget) * 100)}%
+                </span>
+              </div>
+            ) : (
+              <span className="text-muted text-xs">Nhấn để thiết lập thu nhập dự kiến</span>
+            )}
           </div>
         </div>
 
