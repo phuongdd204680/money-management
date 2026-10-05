@@ -7,7 +7,8 @@ import {
   AlertTriangle, 
   ArrowRightLeft, 
   Info,
-  DollarSign
+  DollarSign,
+  Sparkles
 } from 'lucide-react';
 import Icon from './Icon';
 import { formatCurrency } from '../services/storage';
