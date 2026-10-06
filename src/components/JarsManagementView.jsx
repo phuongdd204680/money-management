@@ -78,26 +78,59 @@ export default function JarsManagementView({
   const incomeCategories = categories.filter(c => c.type === 'income');
   const extraIncomeCategories = incomeCategories.filter(c => c.id !== 'cat-salary');
 
+  const parsedSalary = Math.max(0, Number(salaryInput) || 0);
+  const parsedExtraIncome = Math.max(0, Number(extraIncomeInput) || 0);
+  const totalTargetIncome = parsedSalary + parsedExtraIncome;
+  const activeIncomeBase = totalTargetIncome > 0 ? totalTargetIncome : parsedSalary;
+
+  // Tổng hạn mức của các hũ hiện tại (dùng làm cơ sở khi chưa có thông tin thu nhập dự kiến)
+  const totalBudgetsSum = safeJars.reduce((acc, j) => {
+    const b = editingBudgets[j.id] !== undefined ? editingBudgets[j.id] : (j.defaultBudget || 0);
+    return acc + (Number(b) || 0);
+  }, 0);
+
+  const baseIncome = activeIncomeBase > 0 
+    ? activeIncomeBase 
+    : (monthlyIncomeTarget > 0 ? monthlyIncomeTarget : totalBudgetsSum);
+
   // Tính tổng % hiện tại
   const totalPercent = Object.values(editingPercents).reduce((acc, val) => acc + (Number(val) || 0), 0);
   const isValidPercent = totalPercent === 100;
 
   const handlePercentChange = (id, val) => {
     setIsSaved(false);
-    const num = Math.max(0, Math.min(100, parseInt(val, 10) || 0));
+    const num = val === '' ? '' : Math.max(0, Math.min(100, parseInt(val, 10) || 0));
     setEditingPercents(prev => ({ ...prev, [id]: num }));
+
+    if (baseIncome > 0) {
+      const numForCalc = Number(num) || 0;
+      const calculatedBudget = Math.round((baseIncome * numForCalc) / 100);
+      setEditingBudgets(prev => ({ ...prev, [id]: calculatedBudget }));
+    }
   };
 
   const handleBudgetChange = (id, val) => {
     setIsSaved(false);
-    const num = Math.max(0, parseInt(val, 10) || 0);
+    const num = val === '' ? '' : Math.max(0, parseInt(val, 10) || 0);
     setEditingBudgets(prev => ({ ...prev, [id]: num }));
-  };
 
-  const parsedSalary = Math.max(0, Number(salaryInput) || 0);
-  const parsedExtraIncome = Math.max(0, Number(extraIncomeInput) || 0);
-  const totalTargetIncome = parsedSalary + parsedExtraIncome;
-  const activeIncomeBase = totalTargetIncome > 0 ? totalTargetIncome : parsedSalary;
+    const numForCalc = Number(num) || 0;
+    const calcBase = activeIncomeBase > 0 
+      ? activeIncomeBase 
+      : (monthlyIncomeTarget > 0 
+          ? monthlyIncomeTarget 
+          : safeJars.reduce((acc, j) => {
+              if (j.id === id) return acc + numForCalc;
+              const b = editingBudgets[j.id] !== undefined ? editingBudgets[j.id] : (j.defaultBudget || 0);
+              return acc + (Number(b) || 0);
+            }, 0)
+        );
+
+    if (calcBase > 0) {
+      const calculatedPct = Math.min(100, Math.max(0, Math.round((numForCalc / calcBase) * 100)));
+      setEditingPercents(prev => ({ ...prev, [id]: calculatedPct }));
+    }
+  };
 
   // Tự động tính lại hạn mức ngân sách của 6 hũ dựa trên thu nhập dự kiến
   const handleApplyIncomeToBudgets = () => {
@@ -144,6 +177,13 @@ export default function JarsManagementView({
       give: 5
     };
     setEditingPercents(def);
+    if (baseIncome > 0) {
+      const newBudgets = {};
+      Object.entries(def).forEach(([jarId, pct]) => {
+        newBudgets[jarId] = Math.round((baseIncome * pct) / 100);
+      });
+      setEditingBudgets(newBudgets);
+    }
     setIsSaved(false);
   };
 
@@ -155,8 +195,8 @@ export default function JarsManagementView({
 
     const updatedJars = jars.map(j => ({
       ...j,
-      percent: editingPercents[j.id] !== undefined ? editingPercents[j.id] : j.percent,
-      defaultBudget: editingBudgets[j.id] !== undefined ? editingBudgets[j.id] : j.defaultBudget
+      percent: Number(editingPercents[j.id] !== undefined ? editingPercents[j.id] : j.percent) || 0,
+      defaultBudget: Number(editingBudgets[j.id] !== undefined ? editingBudgets[j.id] : j.defaultBudget) || 0
     }));
 
     onUpdateJars(updatedJars);
@@ -457,9 +497,12 @@ export default function JarsManagementView({
                         max="100"
                         step="1"
                         className="custom-range"
-                        value={currentPct}
+                        value={currentPct === '' ? 0 : currentPct}
                         onChange={e => handlePercentChange(jar.id, e.target.value)}
-                        style={{ accentColor: jar.color }}
+                        style={{
+                          color: jar.color,
+                          background: `linear-gradient(to right, ${jar.color} 0%, ${jar.color} ${currentPct === '' ? 0 : currentPct}%, var(--range-track-bg) ${currentPct === '' ? 0 : currentPct}%, var(--range-track-bg) 100%)`
+                        }}
                       />
                       <input
                         type="number"
