@@ -1,0 +1,86 @@
+<svg width="128" height="128" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Layer 1: Red-Orange / Coral (NEC) -->
+    <linearGradient id="jar-band-1" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#f43f5e" />
+      <stop offset="100%" stop-color="#fb923c" />
+    </linearGradient>
+
+    <!-- Layer 2: Amber-Gold (LTSS) -->
+    <linearGradient id="jar-band-2" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#f97316" />
+      <stop offset="100%" stop-color="#facc15" />
+    </linearGradient>
+
+    <!-- Layer 3: Lime / Emerald Green (PLAY) -->
+    <linearGradient id="jar-band-3" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#eab308" />
+      <stop offset="50%" stop-color="#84cc16" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+
+    <!-- Layer 4: Cyan / Aqua Teal (EDU) -->
+    <linearGradient id="jar-band-4" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" />
+      <stop offset="50%" stop-color="#06b6d4" />
+      <stop offset="100%" stop-color="#38bdf8" />
+    </linearGradient>
+
+    <!-- Layer 5: Ocean Blue / Electric Indigo (FFA) -->
+    <linearGradient id="jar-band-5" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7" />
+      <stop offset="60%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#6366f1" />
+    </linearGradient>
+
+    <!-- Layer 6: Deep Royal Indigo / Violet (GIVE) -->
+    <linearGradient id="jar-band-6" x1="15%" y1="0%" x2="85%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#8b5cf6" />
+    </linearGradient>
+
+    <!-- Soft Ambient Glow -->
+    <radialGradient id="jar-ambient-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#6366f1" stop-opacity="0.3" />
+      <stop offset="60%" stop-color="#ec4899" stop-opacity="0.1" />
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- Specular Highlight -->
+    <linearGradient id="jar-specular" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <!-- Ambient glow -->
+  <circle cx="50" cy="50" r="46" fill="url(#jar-ambient-glow)" />
+
+  <!-- 6 Smart Jar Bands -->
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <!-- Band 1: Jar Top Rim / Lid (Red-Orange) -->
+    <path d="M 33 16 C 30 16 28 18 30 21 C 32 24 37 25 43 25 L 67 25 C 73 25 78 21 78 18.5 C 78 16 73 16 67 16 Z" fill="url(#jar-band-1)" />
+
+    <!-- Band 2: Upper Neck Curve (Orange-Gold) -->
+    <path d="M 27 31 C 23 31 22 34 25 37 C 28 40 37 41 45 40 L 73 38 C 78 37 80 34 78 31 C 76 28 71 28 65 29 Z" fill="url(#jar-band-2)" />
+
+    <!-- Band 3: Upper Belly Wave (Lime-Green) -->
+    <path d="M 20 45 C 16 46 16 50 19 53 C 23 56 32 56 42 55 L 78 52 C 84 51 86 47 84 44 C 82 41 77 41 71 42 Z" fill="url(#jar-band-3)" />
+
+    <!-- Band 4: Mid Belly Wave (Teal-Cyan) -->
+    <path d="M 18 59 C 14 60 14 64 18 67 C 22 70 32 70 42 69 L 79 66 C 85 65 87 61 85 58 C 83 55 78 55 71 56 Z" fill="url(#jar-band-4)" />
+
+    <!-- Band 5: Lower Taper Wave (Blue-Indigo) -->
+    <path d="M 21 73 C 18 74 18 78 22 81 C 26 84 35 84 45 83 L 75 79 C 81 78 82 74 80 71 C 78 68 74 68 68 70 Z" fill="url(#jar-band-5)" />
+
+    <!-- Band 6: Jar Base Loop (Royal Blue-Violet) -->
+    <path d="M 28 86 C 25 87 25 91 30 93 C 36 95 48 95 56 94 L 67 92 C 73 91 75 87 72 84 C 69 82 64 83 58 84 Z" fill="url(#jar-band-6)" />
+
+    <!-- Specular Sheen -->
+    <path d="M 30 20 C 22 35 18 55 23 75" stroke="url(#jar-specular)" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.55" />
+
+    <!-- Top Sparkle -->
+    <circle cx="77" cy="13" r="2.2" fill="#fef08a" opacity="0.9" />
+  </g>
+</svg>

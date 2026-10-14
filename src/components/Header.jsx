@@ -18,6 +18,7 @@ import {
   LogOut,
   UserCheck
 } from 'lucide-react';
+import FinFlowLogo from './FinFlowLogo';
 
 export default function Header({
   activeTab,
@@ -68,8 +69,8 @@ export default function Header({
         <div className="header-top">
           {/* Logo & Brand */}
           <div className="brand-container">
-            <div className="brand-logo">
-              <span className="logo-sparkle">✦</span>
+            <div className="brand-logo" title="FinFlow 6Jars - 6 Hũ tài chính thông minh">
+              <FinFlowLogo size={42} animated={true} />
             </div>
             <div>
               <div className="brand-title-wrap">
