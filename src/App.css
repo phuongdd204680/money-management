@@ -1670,3 +1670,459 @@
   opacity: 0.8;
 }
 
+/* =========================================================
+   FinFlow 6Jars - 10/10 Premium Fintech UI & Responsive Suite
+   ========================================================= */
+
+/* 1. Hero Financial Health & Cashflow Overview */
+.hero-cashflow-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(16, 185, 129, 0.08) 50%, rgba(19, 25, 38, 0.95) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: var(--radius-xl);
+  padding: 1.75rem 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35), 0 0 20px rgba(99, 102, 241, 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+[data-theme="light"] .hero-cashflow-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(16, 185, 129, 0.06) 50%, #ffffff 100%);
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.08);
+}
+
+.hero-cashflow-card::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.25), transparent 70%);
+  pointer-events: none;
+}
+
+.hero-cashflow-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.85rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.65rem;
+}
+
+[data-theme="light"] .hero-status-pill {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.hero-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dot-stellar {
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+}
+
+.dot-good {
+  background: #3b82f6;
+  box-shadow: 0 0 8px #3b82f6;
+}
+
+.dot-warning {
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+}
+
+.hero-subheading {
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+
+.hero-amount-display {
+  font-family: var(--font-heading);
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.85rem;
+}
+
+.hero-metrics-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.metric-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  padding: 0.35rem 0.8rem;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  box-shadow: var(--shadow-xs);
+}
+
+.hero-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+/* 2. Current Month Jump Pill in Header */
+.current-month-jump-pill {
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  color: var(--primary-light);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-full);
+  margin-left: 0.4rem;
+  animation: fadeIn 0.2s ease;
+}
+
+/* 3. Transaction Modal Enhanced UX */
+.amount-preview-card {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--radius-md);
+  margin-top: 0.45rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.amount-main-preview {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.amount-words-text {
+  font-size: 0.8rem;
+}
+
+.text-primary-color {
+  color: var(--primary-light);
+}
+
+/* 4. Jar Card Remaining Budget & Overbudget Highlights */
+.jar-card-over {
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.15) !important;
+}
+
+.jar-card-warn {
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+.remaining-pill {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* 5. Mobile Transaction Cards View */
+.desktop-tx-table-wrap {
+  display: block;
+}
+
+.mobile-tx-cards-wrap {
+  display: none;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.mobile-tx-card {
+  background: var(--bg-card-alt);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.mobile-tx-card:active {
+  transform: scale(0.99);
+  background: var(--bg-card-hover);
+}
+
+.mobile-tx-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.mobile-tx-cat {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.mobile-tx-title {
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.mobile-tx-amount {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+
+.mobile-tx-note {
+  background: var(--bg-secondary);
+  padding: 0.4rem 0.65rem;
+  border-radius: var(--radius-sm);
+  line-height: 1.4;
+}
+
+.mobile-tx-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.mobile-tx-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.mobile-tx-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* 6. Mobile Bottom Navigation Bar */
+.mobile-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 850;
+  background: var(--bg-glass);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border-color);
+  padding: 0.4rem 0.5rem calc(0.4rem + env(safe-area-inset-bottom, 0px)) 0.5rem;
+  justify-content: space-around;
+  align-items: center;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="light"] .mobile-bottom-nav {
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  color: var(--text-secondary);
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+  min-width: 52px;
+}
+
+.mobile-nav-item.active {
+  color: var(--primary-light);
+}
+
+.mobile-fab-center-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.5);
+  transform: translateY(-8px);
+  border: 3px solid var(--bg-card);
+  transition: transform 0.15s ease;
+  cursor: pointer;
+}
+
+.mobile-fab-center-btn:active {
+  transform: translateY(-8px) scale(0.92);
+}
+
+/* =========================================================
+   7. Comprehensive Responsive Breakpoints
+   ========================================================= */
+
+@media (max-width: 1024px) {
+  .header-top {
+    gap: 1rem;
+  }
+  .overview-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dashboard-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+  .jars-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  /* Layout adjustments */
+  .header-wrapper {
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .header-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+    padding-bottom: 0.85rem;
+  }
+  .brand-container {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .month-picker-container {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .header-actions {
+    justify-content: space-between;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .header-actions .btn-primary {
+    display: none; /* Replaced by bottom FAB on mobile */
+  }
+
+  /* Desktop nav hidden on mobile in favor of bottom nav */
+  .header-nav {
+    display: none;
+  }
+  .mobile-bottom-nav {
+    display: flex;
+  }
+
+  /* Hero Banner */
+  .hero-cashflow-card {
+    padding: 1.25rem 1.15rem;
+  }
+  .hero-amount-display {
+    font-size: 2rem;
+  }
+  .hero-right-actions {
+    width: 100%;
+  }
+  .hero-right-actions .btn {
+    flex: 1;
+  }
+
+  /* Stats Grid */
+  .overview-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  /* Jars Grid */
+  .jars-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Switch Table to Mobile Card List */
+  .desktop-tx-table-wrap {
+    display: none;
+  }
+  .mobile-tx-cards-wrap {
+    display: flex;
+  }
+
+  /* Filter toolbar on mobile */
+  .toolbar-top {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .toolbar-actions {
+    width: 100%;
+    display: flex;
+  }
+  .toolbar-actions .btn {
+    flex: 1;
+  }
+  .filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .filter-selects-wrap {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .filter-select {
+    width: 100%;
+  }
+
+  /* Split preview in Jars Management */
+  .income-sources-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-amount-display {
+    font-size: 1.75rem;
+  }
+  .metric-chip {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.6rem;
+  }
+  .ratio-legend-grid {
+    grid-template-columns: 1fr;
+  }
+  .card {
+    padding: 1rem;
+  }
+}
+

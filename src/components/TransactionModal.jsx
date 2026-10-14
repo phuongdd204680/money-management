@@ -199,9 +199,26 @@ export default function TransactionModal({
 
   const currentJarObj = data.jars.find(j => j.id === jarId);
 
+  // Hàm đọc số tiền bằng chữ tiếng Việt cơ bản cho trải nghiệm fintech
+  const formatVietnameseCurrencyPreview = (num) => {
+    if (!num || num <= 0) return '';
+    if (num >= 1000000000) return `${(num / 1000000000).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} tỷ đồng`;
+    if (num >= 1000000) return `${(num / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 2 })} triệu đồng`;
+    if (num >= 1000) return `${(num / 1000).toLocaleString('vi-VN')} nghìn đồng`;
+    return `${num.toLocaleString('vi-VN')} đồng`;
+  };
+
+  const handleAddQuickAmount = (val) => {
+    const current = Number(amount) || 0;
+    setAmount((current + val).toString());
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={e => e.stopPropagation()}>
+        {/* Mobile Drag Indicator Handle */}
+        <div className="modal-drag-handle"></div>
+
         {/* Modal Header */}
         <div className="modal-header">
           <div className="tab-pill-group">
@@ -236,23 +253,34 @@ export default function TransactionModal({
             </button>
           </div>
 
-          <button className="btn-icon btn-ghost" onClick={onClose}>
+          <button className="btn-icon btn-ghost" onClick={onClose} aria-label="Đóng cửa sổ">
             <X size={20} />
           </button>
         </div>
 
         {/* Modal Body Form */}
         <form onSubmit={handleSubmit} className="modal-body">
-          {/* 1. Nhập Số Tiền */}
+          {/* 1. Nhập Số Tiền với Real-time Format */}
           <div className="form-group">
-            <label className="form-label">Số tiền (VNĐ) *</label>
+            <div className="flex-between">
+              <label className="form-label font-semibold">Số tiền giao dịch *</label>
+              {parsedAmount > 0 && (
+                <button 
+                  type="button" 
+                  className="btn-link text-xs text-muted hover-danger"
+                  onClick={() => setAmount('')}
+                >
+                  Xoá số tiền
+                </button>
+              )}
+            </div>
             <div className="amount-input-wrap">
               <input
                 id="input-tx-amount"
                 type="number"
                 min="0"
                 step="1000"
-                className="form-control amount-input"
+                className="form-control amount-input font-bold"
                 placeholder="0"
                 value={amount}
                 onChange={e => setAmount(e.target.value)}
@@ -262,21 +290,28 @@ export default function TransactionModal({
               <span className="currency-unit">₫</span>
             </div>
             {parsedAmount > 0 && (
-              <div className="amount-preview-text text-muted">
-                = {formatCurrency(parsedAmount)}
+              <div className="amount-preview-card">
+                <span className="amount-main-preview text-primary-color font-bold">
+                  {formatCurrency(parsedAmount)}
+                </span>
+                <span className="amount-words-text text-muted">
+                  ({formatVietnameseCurrencyPreview(parsedAmount)})
+                </span>
               </div>
             )}
 
-            {/* Quick buttons */}
-            <div className="quick-amount-buttons">
+            {/* Quick buttons - cộng dồn tiện lợi */}
+            <div className="quick-amount-chips">
+              <span className="quick-label text-muted text-xs">Cộng nhanh:</span>
               {[50000, 100000, 200000, 500000, 1000000, 2000000, 5000000].map(val => (
                 <button
                   key={val}
                   type="button"
-                  className="quick-amount-btn"
-                  onClick={() => setAmount(val.toString())}
+                  className="chip-btn"
+                  onClick={() => handleAddQuickAmount(val)}
+                  title={`Cộng thêm ${formatCurrency(val)}`}
                 >
-                  +{val >= 1000000 ? `${val / 1000000}tr` : `${val / 1000}k`}
+                  +{val >= 1000000 ? `${val / 1000000}Tr` : `${val / 1000}k`}
                 </button>
               ))}
             </div>

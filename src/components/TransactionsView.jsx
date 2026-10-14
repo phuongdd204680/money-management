@@ -236,52 +236,166 @@ export default function TransactionsView({
             </button>
           </div>
         ) : (
-          <div className="table-responsive">
-            <table className="transactions-table">
-              <thead>
-                <tr>
-                  <th>Ngày</th>
-                  <th>Danh mục / Khoản giao dịch</th>
-                  <th>Hũ tài chính</th>
-                  <th>Tính chất</th>
-                  <th className="text-right">Số tiền</th>
-                  <th className="text-center">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredList.map(tx => {
-                  const cat = catMap[tx.categoryId] || { name: 'Khác', icon: 'Tag', color: '#6366f1' };
-                  const isInc = tx.type === 'income';
-                  const jar = jarMap[tx.jarId];
+          <>
+            {/* Desktop Table View */}
+            <div className="table-responsive desktop-tx-table-wrap">
+              <table className="transactions-table">
+                <thead>
+                  <tr>
+                    <th>Ngày</th>
+                    <th>Danh mục / Khoản giao dịch</th>
+                    <th>Hũ tài chính</th>
+                    <th>Tính chất</th>
+                    <th className="text-right">Số tiền</th>
+                    <th className="text-center">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredList.map(tx => {
+                    const cat = catMap[tx.categoryId] || { name: 'Khác', icon: 'Tag', color: '#6366f1' };
+                    const isInc = tx.type === 'income';
+                    const jar = jarMap[tx.jarId];
 
-                  return (
-                    <tr key={tx.id} className="tx-row">
-                      {/* Ngày */}
-                      <td className="tx-date-col">
-                        <div className="date-badge">
-                          <Calendar size={13} className="text-muted" />
-                          <span>{formatDate(tx.date)}</span>
-                        </div>
-                      </td>
-
-                      {/* Danh mục & Ghi chú */}
-                      <td className="tx-info-col">
-                        <div className="tx-item-flex">
-                          <div 
-                            className="tx-category-icon"
-                            style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
-                          >
-                            <Icon name={cat.icon} size={16} color={cat.color} />
+                    return (
+                      <tr key={tx.id} className="tx-row">
+                        {/* Ngày */}
+                        <td className="tx-date-col">
+                          <div className="date-badge">
+                            <Calendar size={13} className="text-muted" />
+                            <span>{formatDate(tx.date)}</span>
                           </div>
-                          <div>
-                            <div className="tx-category-title">{cat.name}</div>
-                            {tx.note && <div className="tx-note-text text-muted">{tx.note}</div>}
+                        </td>
+
+                        {/* Danh mục & Ghi chú */}
+                        <td className="tx-info-col">
+                          <div className="tx-item-flex">
+                            <div 
+                              className="tx-category-icon"
+                              style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
+                            >
+                              <Icon name={cat.icon} size={16} color={cat.color} />
+                            </div>
+                            <div>
+                              <div className="tx-category-title">{cat.name}</div>
+                              {tx.note && <div className="tx-note-text text-muted">{tx.note}</div>}
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Hũ tài chính */}
+                        <td className="tx-jar-col">
+                          {isInc && tx.jarId === 'all' ? (
+                            <span className="badge badge-variable">✨ Chia 6 Hũ</span>
+                          ) : jar ? (
+                            <span 
+                              className="jar-pill-tag"
+                              style={{ 
+                                color: jar.color, 
+                                borderColor: `${jar.color}40`,
+                                backgroundColor: `${jar.color}15`
+                              }}
+                            >
+                              {jar.name} ({jar.code})
+                            </span>
+                          ) : (
+                            <span className="text-muted">-</span>
+                          )}
+                        </td>
+
+                        {/* Tính chất Cố định / Phát sinh */}
+                        <td className="tx-nature-col">
+                          {tx.type === 'expense' ? (
+                            <span className={`badge ${tx.isFixed ? 'badge-fixed' : 'badge-variable'}`}>
+                              {tx.isFixed ? 'Cố định' : 'Phát sinh'}
+                            </span>
+                          ) : (
+                            <span className="badge badge-income">Thu nhập</span>
+                          )}
+                        </td>
+
+                        {/* Số tiền */}
+                        <td className={`tx-amount-col text-right ${isInc ? 'text-success font-bold' : 'text-danger font-semibold'}`}>
+                          {isInc ? '+' : '-'}{formatCurrency(tx.amount)}
+                        </td>
+
+                        {/* Thao tác */}
+                        <td className="tx-actions-col text-center">
+                          <div className="action-buttons-wrap">
+                            <button
+                              id={`btn-edit-tx-${tx.id}`}
+                              className="btn-icon-sm text-muted hover-primary"
+                              onClick={() => onEditTransaction(tx)}
+                              title="Sửa giao dịch"
+                            >
+                              <Edit2 size={15} />
+                            </button>
+                            <button
+                              id={`btn-delete-tx-${tx.id}`}
+                              className="btn-icon-sm text-muted hover-danger"
+                              onClick={() => {
+                                if (window.confirm('Bạn có chắc chắn muốn xóa giao dịch này không?')) {
+                                  onDeleteTransaction(tx.id);
+                                }
+                              }}
+                              title="Xóa giao dịch"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List View (Dedicated for smartphone viewports) */}
+            <div className="mobile-tx-cards-wrap">
+              {filteredList.map(tx => {
+                const cat = catMap[tx.categoryId] || { name: 'Khác', icon: 'Tag', color: '#6366f1' };
+                const isInc = tx.type === 'income';
+                const jar = jarMap[tx.jarId];
+
+                return (
+                  <div key={tx.id} className="mobile-tx-card">
+                    <div className="mobile-tx-top">
+                      <div className="mobile-tx-cat">
+                        <div 
+                          className="tx-category-icon"
+                          style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
+                        >
+                          <Icon name={cat.icon} size={18} color={cat.color} />
+                        </div>
+                        <div>
+                          <div className="mobile-tx-title font-semibold">{cat.name}</div>
+                          <div className="mobile-tx-date text-muted text-xs">
+                            {formatDate(tx.date)}
                           </div>
                         </div>
-                      </td>
+                      </div>
 
-                      {/* Hũ tài chính */}
-                      <td className="tx-jar-col">
+                      <div className={`mobile-tx-amount font-bold ${isInc ? 'text-success' : 'text-danger'}`}>
+                        {isInc ? '+' : '-'}{formatCurrency(tx.amount)}
+                      </div>
+                    </div>
+
+                    {tx.note && (
+                      <div className="mobile-tx-note text-muted text-xs">
+                        {tx.note}
+                      </div>
+                    )}
+
+                    <div className="mobile-tx-bottom">
+                      <div className="mobile-tx-tags">
+                        {tx.type === 'expense' ? (
+                          <span className={`badge ${tx.isFixed ? 'badge-fixed' : 'badge-variable'}`}>
+                            {tx.isFixed ? 'Cố định' : 'Phát sinh'}
+                          </span>
+                        ) : (
+                          <span className="badge badge-income">Thu nhập</span>
+                        )}
+
                         {isInc && tx.jarId === 'all' ? (
                           <span className="badge badge-variable">✨ Chia 6 Hũ</span>
                         ) : jar ? (
@@ -295,58 +409,35 @@ export default function TransactionsView({
                           >
                             {jar.name} ({jar.code})
                           </span>
-                        ) : (
-                          <span className="text-muted">-</span>
-                        )}
-                      </td>
+                        ) : null}
+                      </div>
 
-                      {/* Tính chất Cố định / Phát sinh */}
-                      <td className="tx-nature-col">
-                        {tx.type === 'expense' ? (
-                          <span className={`badge ${tx.isFixed ? 'badge-fixed' : 'badge-variable'}`}>
-                            {tx.isFixed ? 'Cố định' : 'Phát sinh'}
-                          </span>
-                        ) : (
-                          <span className="badge badge-income">Thu nhập</span>
-                        )}
-                      </td>
-
-                      {/* Số tiền */}
-                      <td className={`tx-amount-col text-right ${isInc ? 'text-success font-bold' : 'text-danger font-semibold'}`}>
-                        {isInc ? '+' : '-'}{formatCurrency(tx.amount)}
-                      </td>
-
-                      {/* Thao tác */}
-                      <td className="tx-actions-col text-center">
-                        <div className="action-buttons-wrap">
-                          <button
-                            id={`btn-edit-tx-${tx.id}`}
-                            className="btn-icon-sm text-muted hover-primary"
-                            onClick={() => onEditTransaction(tx)}
-                            title="Sửa giao dịch"
-                          >
-                            <Edit2 size={15} />
-                          </button>
-                          <button
-                            id={`btn-delete-tx-${tx.id}`}
-                            className="btn-icon-sm text-muted hover-danger"
-                            onClick={() => {
-                              if (window.confirm('Bạn có chắc chắn muốn xóa giao dịch này không?')) {
-                                onDeleteTransaction(tx.id);
-                              }
-                            }}
-                            title="Xóa giao dịch"
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      <div className="mobile-tx-actions">
+                        <button
+                          className="btn-icon-sm text-muted hover-primary"
+                          onClick={() => onEditTransaction(tx)}
+                          aria-label="Sửa giao dịch"
+                        >
+                          <Edit2 size={16} />
+                        </button>
+                        <button
+                          className="btn-icon-sm text-muted hover-danger"
+                          onClick={() => {
+                            if (window.confirm('Bạn có chắc chắn muốn xóa giao dịch này không?')) {
+                              onDeleteTransaction(tx.id);
+                            }
+                          }}
+                          aria-label="Xoá giao dịch"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>

@@ -52,55 +52,64 @@ export default function Header({
     setSelectedMonth(newMonthStr);
   };
 
+  const now = new Date();
+  const actualCurrentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const isCurrentMonth = selectedMonth === actualCurrentMonthStr;
+
   const handleCurrentMonth = () => {
-    const now = new Date();
-    setSelectedMonth(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`);
+    setSelectedMonth(actualCurrentMonthStr);
   };
 
   const [currentYear, currentMonth] = selectedMonth.split('-');
 
   return (
-    <header className="header-wrapper">
-      <div className="header-top">
-        {/* Logo & Brand */}
-        <div className="brand-container">
-          <div className="brand-logo">
-            <span className="logo-sparkle">✦</span>
-          </div>
-          <div>
-            <div className="brand-title-wrap">
-              <h1 className="brand-title">FinFlow</h1>
-              <span className="brand-badge">6 Jars</span>
+    <>
+      <header className="header-wrapper">
+        <div className="header-top">
+          {/* Logo & Brand */}
+          <div className="brand-container">
+            <div className="brand-logo">
+              <span className="logo-sparkle">✦</span>
             </div>
-            <p className="brand-subtitle">Quản lý dòng tiền & Chi tiêu 6 hũ thông minh</p>
-          </div>
-        </div>
-
-        {/* Month Selector */}
-        <div className="month-picker-container">
-          <button 
-            id="btn-prev-month"
-            className="btn btn-secondary btn-icon" 
-            onClick={() => handleMonthChange(-1)} 
-            title="Tháng trước"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          
-          <div className="month-display" onClick={handleCurrentMonth} title="Nhấn để về tháng hiện tại">
-            <Calendar size={16} className="text-primary-color" />
-            <span className="month-text">Tháng {currentMonth} / {currentYear}</span>
+            <div>
+              <div className="brand-title-wrap">
+                <h1 className="brand-title">FinFlow</h1>
+                <span className="brand-badge">6 Jars</span>
+              </div>
+              <p className="brand-subtitle">Quản lý dòng tiền & Chi tiêu 6 hũ thông minh</p>
+            </div>
           </div>
 
-          <button 
-            id="btn-next-month"
-            className="btn btn-secondary btn-icon" 
-            onClick={() => handleMonthChange(1)} 
-            title="Tháng sau"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
+          {/* Month Selector with Current Month Indicator */}
+          <div className="month-picker-container">
+            <button 
+              id="btn-prev-month"
+              className="btn btn-secondary btn-icon" 
+              onClick={() => handleMonthChange(-1)} 
+              title="Tháng trước"
+              aria-label="Tháng trước"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            
+            <div className="month-display" onClick={handleCurrentMonth} title="Nhấn để về tháng hiện tại">
+              <Calendar size={16} className="text-primary-color" />
+              <span className="month-text">Tháng {currentMonth} / {currentYear}</span>
+              {!isCurrentMonth && (
+                <span className="current-month-jump-pill">Về hiện tại</span>
+              )}
+            </div>
+
+            <button 
+              id="btn-next-month"
+              className="btn btn-secondary btn-icon" 
+              onClick={() => handleMonthChange(1)} 
+              title="Tháng sau"
+              aria-label="Tháng sau"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
 
         {/* Action Controls & Cloud Sync */}
         <div className="header-actions">
@@ -215,5 +224,65 @@ export default function Header({
         </button>
       </nav>
     </header>
+
+    {/* Mobile Bottom Navigation Bar (iOS / Android Fintech Pattern) */}
+    <nav className="mobile-bottom-nav">
+      <button 
+        id="m-nav-dashboard"
+        className={`mobile-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+        onClick={() => setActiveTab('dashboard')}
+      >
+        <PieChart size={19} />
+        <span>Tổng quan</span>
+      </button>
+
+      <button 
+        id="m-nav-transactions"
+        className={`mobile-nav-item ${activeTab === 'transactions' ? 'active' : ''}`}
+        onClick={() => setActiveTab('transactions')}
+      >
+        <ListFilter size={19} />
+        <span>Sổ GD</span>
+      </button>
+
+      {/* Floating Center Action Button in Mobile Nav */}
+      <button 
+        id="m-nav-add-fab"
+        className="mobile-fab-center-btn"
+        onClick={() => onOpenTxModal()}
+        title="Thêm giao dịch mới"
+        aria-label="Thêm giao dịch mới"
+      >
+        <PlusCircle size={26} />
+      </button>
+
+      <button 
+        id="m-nav-jars"
+        className={`mobile-nav-item ${activeTab === 'jars' ? 'active' : ''}`}
+        onClick={() => setActiveTab('jars')}
+      >
+        <Layers size={19} />
+        <span>6 Hũ</span>
+      </button>
+
+      <button 
+        id="m-nav-recurring"
+        className={`mobile-nav-item ${activeTab === 'recurring' ? 'active' : ''}`}
+        onClick={() => setActiveTab('recurring')}
+      >
+        <CalendarClock size={19} />
+        <span>Định kỳ</span>
+      </button>
+
+      <button 
+        id="m-nav-analytics"
+        className={`mobile-nav-item ${activeTab === 'analytics' ? 'active' : ''}`}
+        onClick={() => setActiveTab('analytics')}
+      >
+        <BarChart3 size={19} />
+        <span>Báo cáo</span>
+      </button>
+    </nav>
+  </>
   );
 }

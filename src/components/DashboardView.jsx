@@ -61,6 +61,55 @@ export default function DashboardView({
 
   return (
     <div className="dashboard-grid">
+      {/* 0. Hero Financial Health & Net Cashflow Overview */}
+      <section className="hero-cashflow-card card card-interactive">
+        <div className="hero-cashflow-content">
+          <div className="hero-left">
+            <div className="hero-status-pill">
+              <span className={`hero-status-dot ${netSavings >= 0 ? (savingsRate >= 20 ? 'dot-stellar' : 'dot-good') : 'dot-warning'}`}></span>
+              <span className="hero-status-text">
+                {netSavings >= 0 
+                  ? (savingsRate >= 20 ? 'Kỷ luật tài chính Xuất Sắc ✦ Tích luỹ > 20%' : 'Dòng tiền An Toàn ✦ Thặng dư ngân sách')
+                  : 'Cảnh báo Bội Chi ✦ Đang chi tiêu vượt thu nhập'}
+              </span>
+            </div>
+            <div className="hero-subheading text-muted">Dòng Tiền Tích Lũy Tháng Này</div>
+            <div className={`hero-amount-display ${netSavings >= 0 ? 'text-success' : 'text-danger'}`}>
+              {netSavings >= 0 ? '+' : ''}{formatCurrency(netSavings)}
+            </div>
+            <div className="hero-metrics-strip">
+              <span className="metric-chip">
+                Thu: <b className="text-success">+{formatCurrency(totalIncome)}</b>
+              </span>
+              <span className="metric-chip">
+                Chi: <b className="text-danger">-{formatCurrency(totalExpense)}</b>
+              </span>
+              <span className="metric-chip">
+                Tỷ lệ tiết kiệm: <b className={savingsRate >= 20 ? 'text-primary-color' : 'text-muted'}>{savingsRate}%</b>
+              </span>
+            </div>
+          </div>
+
+          <div className="hero-right-actions">
+            <button 
+              id="btn-hero-add-tx"
+              className="btn btn-primary"
+              onClick={() => onOpenTxModal()}
+            >
+              <Sparkles size={16} />
+              <span>+ Thêm giao dịch</span>
+            </button>
+            <button 
+              className="btn btn-secondary"
+              onClick={() => setActiveTab('analytics')}
+            >
+              <span>Xem báo cáo</span>
+              <ArrowRight size={15} />
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* 1. Hàng Thống Kê Tổng Quan */}
       <section className="overview-stats-grid">
         {/* Thu Nhập */}
@@ -225,11 +274,12 @@ export default function DashboardView({
           {jarsList.map(jar => {
             const isOver = jar.spentPercent >= 100;
             const isWarning = jar.spentPercent >= 80 && !isOver;
+            const remainingBudget = (jar.budget || 0) - (jar.totalSpent || 0);
 
             return (
               <div 
                 key={jar.id} 
-                className="jar-card card card-interactive"
+                className={`jar-card card card-interactive ${isOver ? 'jar-card-over' : isWarning ? 'jar-card-warn' : ''}`}
                 style={{ borderTop: `4px solid ${jar.color}` }}
               >
                 <div className="jar-card-top">
@@ -245,18 +295,21 @@ export default function DashboardView({
                     </div>
                   </div>
 
-                  <span className={`jar-balance-pill ${jar.balance >= 0 ? 'positive' : 'negative'}`}>
-                    {formatCurrency(jar.balance)}
-                  </span>
+                  <div className="text-right">
+                    <div className="text-xs text-muted">Số dư trong hũ</div>
+                    <span className={`jar-balance-pill ${jar.balance >= 0 ? 'positive' : 'negative'}`}>
+                      {formatCurrency(jar.balance)}
+                    </span>
+                  </div>
                 </div>
 
                 <p className="jar-description">{jar.description}</p>
 
-                {/* Thanh tiến độ ngân sách */}
+                {/* Thanh tiến độ ngân sách với Remaining badge */}
                 <div className="jar-progress-wrap">
                   <div className="progress-labels">
-                    <span className="text-muted">Đã chi: <b>{formatCurrency(jar.totalSpent)}</b></span>
-                    <span className={`budget-percent ${isOver ? 'text-danger font-bold' : isWarning ? 'text-warning' : 'text-muted'}`}>
+                    <span className="text-muted">Đã chi: <b className="text-main">{formatCurrency(jar.totalSpent)}</b></span>
+                    <span className={`budget-percent ${isOver ? 'text-danger font-bold' : isWarning ? 'text-warning font-semibold' : 'text-muted'}`}>
                       {jar.spentPercent}% ngân sách
                     </span>
                   </div>
@@ -270,8 +323,10 @@ export default function DashboardView({
                     ></div>
                   </div>
                   <div className="progress-footer text-muted">
-                    <span>Nạp vào: {formatCurrency(jar.incomeAllocated)}</span>
                     <span>Hạn mức: {formatCurrency(jar.budget)}</span>
+                    <span className={`remaining-pill ${remainingBudget >= 0 ? 'text-success' : 'text-danger font-bold'}`}>
+                      {remainingBudget >= 0 ? `Còn ${formatCurrency(remainingBudget)}` : `Vượt ${formatCurrency(Math.abs(remainingBudget))}`}
+                    </span>
                   </div>
                 </div>
 

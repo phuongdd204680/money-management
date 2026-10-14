@@ -132,6 +132,18 @@ export default function JarsManagementView({
     }
   };
 
+  // Tự động bù trừ chênh lệch tỷ lệ về đúng 100%
+  const handleAutoBalance = () => {
+    const diff = 100 - totalPercent;
+    if (diff === 0) return;
+    const necJar = safeJars.find(j => j.id === 'nec') || safeJars[0];
+    if (necJar) {
+      const currentNec = Number(editingPercents[necJar.id]) || 0;
+      const newNec = Math.max(0, Math.min(100, currentNec + diff));
+      handlePercentChange(necJar.id, newNec);
+    }
+  };
+
   // Tự động tính lại hạn mức ngân sách của 6 hũ dựa trên thu nhập dự kiến
   const handleApplyIncomeToBudgets = () => {
     if (activeIncomeBase <= 0) {
@@ -445,15 +457,25 @@ export default function JarsManagementView({
 
         {/* Thanh cảnh báo tổng % */}
         <div className={`percent-status-bar ${isValidPercent ? 'status-valid' : 'status-invalid'}`}>
-          <div className="status-text">
+          <div className="status-text flex-between flex-wrap gap-2 w-full">
             {isValidPercent ? (
               <span className="text-success flex-center gap-1">
                 <Check size={16} /> Tổng tỷ lệ hợp lệ: <b>100%</b>
               </span>
             ) : (
-              <span className="text-danger flex-center gap-1">
-                <AlertTriangle size={16} /> Tổng tỷ lệ hiện tại là <b>{totalPercent}%</b> (Cần điều chỉnh lại sao cho đúng 100%)
-              </span>
+              <>
+                <span className="text-danger flex-center gap-1">
+                  <AlertTriangle size={16} /> Tổng tỷ lệ hiện tại là <b>{totalPercent}%</b> (Cần điều chỉnh lại sao cho đúng 100%)
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-secondary"
+                  onClick={handleAutoBalance}
+                  title="Tự động bù trừ phần trăm vào hũ Thiết Yếu (NEC)"
+                >
+                  ⚡ Tự động bù trừ về 100%
+                </button>
+              </>
             )}
           </div>
         </div>
