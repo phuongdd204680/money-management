@@ -556,7 +556,19 @@ export default function JarsManagementView({
                 <div className="jar-current-stat-row">
                   <div>
                     <span className="text-muted text-xs">Đã nạp tháng này:</span>
-                    <div className="font-semibold text-sm">{formatCurrency(jarStat.incomeAllocated || 0)}</div>
+                    <div className="font-semibold text-sm">
+                      {formatCurrency(jarStat.incomeAllocated || 0)}
+                      {jarStat.transferredIn > 0 && (
+                        <span className="text-xs text-primary-color ml-1 font-normal" title="Đã nhận bù từ hũ khác">
+                          (+{formatCurrency(jarStat.transferredIn)})
+                        </span>
+                      )}
+                      {jarStat.transferredOut > 0 && (
+                        <span className="text-xs text-warning ml-1 font-normal" title="Đã chuyển sang hũ khác">
+                          (-{formatCurrency(jarStat.transferredOut)})
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <span className="text-muted text-xs">Đã chi tháng này:</span>

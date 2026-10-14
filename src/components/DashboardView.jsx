@@ -44,8 +44,12 @@ export default function DashboardView({
   const fixedPercent = totalExpense > 0 ? Math.round((totalFixedExpense / totalExpense) * 100) : 0;
   const variablePercent = totalExpense > 0 ? (100 - fixedPercent) : 0;
 
-  // Lọc các cảnh báo vượt ngân sách
-  const overBudgetJars = jarsList.filter(j => j.spentPercent > 90);
+  // Lọc các cảnh báo vượt ngân sách:
+  // 1. Hũ có chi tiêu vượt 90% hạn mức khả dụng
+  // 2. Hoặc hũ bị âm số dư khả dụng (balance < 0)
+  const overBudgetJars = jarsList.filter(j => 
+    (j.totalSpent > 0 && j.spentPercent > 90) || j.balance < 0
+  );
 
   // Các hóa đơn cố định chưa thanh toán
   const pendingBills = billsWithStatus.filter(b => !b.isPaid);
@@ -218,22 +222,37 @@ export default function DashboardView({
       {/* 2. Cảnh Báo Thông Minh (Nếu Có Vượt Ngân Sách hoặc Hoá Đơn Chờ) */}
       {(overBudgetJars.length > 0 || pendingBills.length > 0) && (
         <section className="alerts-container">
-          {overBudgetJars.map(jar => (
-            <div key={jar.id} className="alert-card alert-warning-box">
-              <AlertTriangle className="alert-icon text-warning" size={20} />
-              <div className="alert-content">
-                <strong>Cảnh báo ngân sách:</strong> Hũ <b>{jar.name} ({jar.code})</b> đã chi tiêu{' '}
-                <span className="text-danger font-bold">{jar.spentPercent}%</span> so với hạn mức (Đã chi{' '}
-                {formatCurrency(jar.totalSpent)} / Hạn mức {formatCurrency(jar.budget)}).
+          {overBudgetJars.map(jar => {
+            const activeLimit = jar.effectiveBudget > 0 ? jar.effectiveBudget : jar.budget;
+            return (
+              <div key={jar.id} className="alert-card alert-warning-box">
+                <AlertTriangle className="alert-icon text-warning" size={20} />
+                <div className="alert-content">
+                  <strong>Cảnh báo ngân sách:</strong> Hũ <b>{jar.name} ({jar.code})</b>{' '}
+                  {jar.balance < 0 ? (
+                    <>
+                      đang bị <span className="text-danger font-bold">thâm hụt số dư {formatCurrency(Math.abs(jar.balance))}</span> (Đã chi {formatCurrency(jar.totalSpent)} / Hạn mức khả dụng {formatCurrency(activeLimit)}
+                      {jar.transferredIn > 0 && <span className="text-success text-xs font-semibold"> [đã nhận bù +{formatCurrency(jar.transferredIn)}]</span>}
+                      ).
+                    </>
+                  ) : (
+                    <>
+                      đã chi tiêu <span className="text-danger font-bold">{jar.spentPercent}%</span> so với hạn mức (Đã chi{' '}
+                      {formatCurrency(jar.totalSpent)} / Hạn mức khả dụng {formatCurrency(activeLimit)}
+                      {jar.transferredIn > 0 && <span className="text-success text-xs font-semibold"> [đã nhận bù +{formatCurrency(jar.transferredIn)}]</span>}
+                      ).
+                    </>
+                  )}
+                </div>
+                <button 
+                  className="btn btn-sm btn-secondary"
+                  onClick={() => onOpenTxModal({ prefillJarId: jar.id, defaultType: 'transfer' })}
+                >
+                  Chuyển hũ bù tiền
+                </button>
               </div>
-              <button 
-                className="btn btn-sm btn-secondary"
-                onClick={() => onOpenTxModal({ prefillJarId: jar.id, defaultType: 'transfer' })}
-              >
-                Chuyển hũ bù tiền
-              </button>
-            </div>
-          ))}
+            );
+          })}
 
           {pendingBills.slice(0, 2).map(bill => (
             <div key={bill.id} className="alert-card alert-info-box">
@@ -274,7 +293,8 @@ export default function DashboardView({
           {jarsList.map(jar => {
             const isOver = jar.spentPercent >= 100;
             const isWarning = jar.spentPercent >= 80 && !isOver;
-            const remainingBudget = (jar.budget || 0) - (jar.totalSpent || 0);
+            const activeLimit = jar.effectiveBudget !== undefined ? jar.effectiveBudget : jar.budget;
+            const remainingBudget = (activeLimit || 0) - (jar.totalSpent || 0);
 
             return (
               <div 
@@ -323,7 +343,15 @@ export default function DashboardView({
                     ></div>
                   </div>
                   <div className="progress-footer text-muted">
-                    <span>Hạn mức: {formatCurrency(jar.budget)}</span>
+                    <span>
+                      Hạn mức: {formatCurrency(jar.budget)}
+                      {jar.transferredIn > 0 && (
+                        <span className="text-success text-xs font-semibold" title="Đã nhận bù từ hũ khác"> (+{formatCurrency(jar.transferredIn)})</span>
+                      )}
+                      {jar.transferredOut > 0 && (
+                        <span className="text-warning text-xs font-semibold" title="Đã chuyển sang hũ khác"> (-{formatCurrency(jar.transferredOut)})</span>
+                      )}
+                    </span>
                     <span className={`remaining-pill ${remainingBudget >= 0 ? 'text-success' : 'text-danger font-bold'}`}>
                       {remainingBudget >= 0 ? `Còn ${formatCurrency(remainingBudget)}` : `Vượt ${formatCurrency(Math.abs(remainingBudget))}`}
                     </span>
@@ -419,8 +447,14 @@ export default function DashboardView({
               </div>
             ) : (
               recentTransactions.map(tx => {
-                const cat = getCategory(tx.categoryId);
-                const isInc = tx.type === 'income';
+                const isTransfer = tx.categoryId === 'cat-transfer' || 
+                                   tx.type === 'transfer' || 
+                                   (tx.id && (tx.id.startsWith('tx-tf-out-') || tx.id.startsWith('tx-tf-in-')));
+                const isTransferOut = isTransfer && (tx.transferType === 'out' || (tx.id && tx.id.startsWith('tx-tf-out-')) || tx.type === 'expense');
+                const cat = isTransfer 
+                  ? { name: 'Chuyển quỹ nội bộ', icon: 'ArrowLeftRight', color: '#6366f1' }
+                  : getCategory(tx.categoryId);
+                const isInc = !isTransfer && tx.type === 'income';
 
                 return (
                   <div key={tx.id} className="recent-tx-item">
@@ -434,10 +468,16 @@ export default function DashboardView({
                       <div>
                         <div className="recent-tx-name">
                           {cat.name}
-                          {tx.type === 'expense' && (
+                          {isTransfer ? (
+                            <span className="badge badge-transfer ml-2">
+                              {isTransferOut ? 'Chuyển đi' : 'Nhận bù'}
+                            </span>
+                          ) : tx.type === 'expense' ? (
                             <span className={`badge ${tx.isFixed ? 'badge-fixed' : 'badge-variable'} ml-2`}>
                               {tx.isFixed ? 'Cố định' : 'Phát sinh'}
                             </span>
+                          ) : (
+                            <span className="badge badge-income ml-2">Thu nhập</span>
                           )}
                         </div>
                         <div className="recent-tx-meta text-muted">
@@ -446,8 +486,8 @@ export default function DashboardView({
                       </div>
                     </div>
 
-                    <div className={`recent-tx-amount ${isInc ? 'text-success' : 'text-danger'}`}>
-                      {isInc ? '+' : '-'}{formatCurrency(tx.amount)}
+                    <div className={`recent-tx-amount ${isTransfer ? (isTransferOut ? 'text-warning font-semibold' : 'text-primary-color font-semibold') : (isInc ? 'text-success' : 'text-danger')}`}>
+                      {isTransfer ? (isTransferOut ? '-' : '+') : (isInc ? '+' : '-')}{formatCurrency(tx.amount)}
                     </div>
                   </div>
                 );

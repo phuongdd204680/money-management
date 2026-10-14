@@ -345,6 +345,12 @@ button {
   border: 1px solid var(--danger-border);
 }
 
+.badge-transfer {
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+
 /* Light Theme Overrides for Badges */
 [data-theme="light"] .badge-fixed {
   background: rgba(124, 58, 237, 0.1);
@@ -378,6 +384,12 @@ button {
 [data-theme="light"] .badge-extra .badge-dot {
   background-color: #d97706;
   box-shadow: 0 0 4px rgba(217, 119, 6, 0.4);
+}
+
+[data-theme="light"] .badge-transfer {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+  border-color: rgba(99, 102, 241, 0.28);
 }
 
 /* Inputs & Form Controls */

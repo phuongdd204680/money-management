@@ -437,6 +437,7 @@ export default function App() {
         isOpen={isTxModalOpen}
         onClose={() => setIsTxModalOpen(false)}
         data={data}
+        stats={stats}
         onSaveTransaction={handleSaveTransaction}
         editingTx={editingTx}
         initialOptions={txModalOptions}

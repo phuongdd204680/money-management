@@ -91,7 +91,10 @@ export const DEFAULT_CATEGORIES = [
   { id: 'cat-bonus', name: 'Thưởng & Hoa hồng', jarId: 'all', type: 'income', isFixed: false, icon: 'Award', color: '#10b981' },
   { id: 'cat-business', name: 'Kinh doanh / Nghề tay trái', jarId: 'all', type: 'income', isFixed: false, icon: 'ShoppingBag', color: '#10b981' },
   { id: 'cat-interest', name: 'Lãi đầu tư / Cổ tức', jarId: 'all', type: 'income', isFixed: false, icon: 'DollarSign', color: '#10b981' },
-  { id: 'cat-other-inc', name: 'Thu nhập khác', jarId: 'all', type: 'income', isFixed: false, icon: 'PlusCircle', color: '#10b981' }
+  { id: 'cat-other-inc', name: 'Thu nhập khác', jarId: 'all', type: 'income', isFixed: false, icon: 'PlusCircle', color: '#10b981' },
+
+  // Danh mục điều chuyển quỹ nội bộ
+  { id: 'cat-transfer', name: 'Chuyển quỹ / Điều chuyển hũ', jarId: 'all', type: 'transfer', isFixed: false, icon: 'ArrowLeftRight', color: '#6366f1' }
 ];
 
 export const DEFAULT_RECURRING_BILLS = [

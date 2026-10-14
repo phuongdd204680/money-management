@@ -16,6 +16,7 @@ export default function TransactionModal({
   isOpen,
   onClose,
   data,
+  stats = null,
   onSaveTransaction,
   editingTx = null,
   initialOptions = {}
@@ -165,28 +166,38 @@ export default function TransactionModal({
         return;
       }
 
-      // Tạo 2 giao dịch: 1 khoản chi từ Hũ A và 1 khoản thu vào Hũ B
+      // Tạo 2 giao dịch liên kết: 1 khoản chuyển đi từ Hũ A và 1 khoản nhận về ở Hũ B
+      const toJarName = data.jars.find(j => j.id === toJarId)?.name || toJarId;
+      const fromJarName = data.jars.find(j => j.id === fromJarId)?.name || fromJarId;
+      const noteSuffix = note ? `: ${note}` : '';
+
       const transferOut = {
         id: `tx-tf-out-${Date.now()}`,
-        type: 'expense',
+        type: 'transfer',
+        transferType: 'out',
         amount: parsedAmount,
         date,
         categoryId: 'cat-transfer',
         jarId: fromJarId,
+        fromJarId,
+        toJarId,
         isFixed: false,
-        note: `Chuyển sang hũ ${data.jars.find(j => j.id === toJarId)?.name || toJarId}: ${note}`,
+        note: `Chuyển sang hũ ${toJarName}${noteSuffix}`,
         createdAt: Date.now()
       };
 
       const transferIn = {
         id: `tx-tf-in-${Date.now()}`,
-        type: 'income',
+        type: 'transfer',
+        transferType: 'in',
         amount: parsedAmount,
         date,
         categoryId: 'cat-transfer',
         jarId: toJarId,
+        fromJarId,
+        toJarId,
         isFixed: false,
-        note: `Nhận chuyển từ hũ ${data.jars.find(j => j.id === fromJarId)?.name || fromJarId}: ${note}`,
+        note: `Nhận chuyển từ hũ ${fromJarName}${noteSuffix}`,
         splitJars: [{ jarId: toJarId, amount: parsedAmount }],
         createdAt: Date.now() + 1
       };
@@ -486,9 +497,13 @@ export default function TransactionModal({
                     value={fromJarId}
                     onChange={e => setFromJarId(e.target.value)}
                   >
-                    {data.jars.map(j => (
-                      <option key={j.id} value={j.id}>{j.name} ({j.code})</option>
-                    ))}
+                    {data.jars.map(j => {
+                      const jarStat = stats?.jarStats?.[j.id];
+                      const balStr = jarStat !== undefined ? ` [Số dư: ${formatCurrency(jarStat.balance)}]` : '';
+                      return (
+                        <option key={j.id} value={j.id}>{j.name} ({j.code}){balStr}</option>
+                      );
+                    })}
                   </select>
                 </div>
 
@@ -499,13 +514,29 @@ export default function TransactionModal({
                     value={toJarId}
                     onChange={e => setToJarId(e.target.value)}
                   >
-                    {data.jars.map(j => (
-                      <option key={j.id} value={j.id}>{j.name} ({j.code})</option>
-                    ))}
+                    {data.jars.map(j => {
+                      const jarStat = stats?.jarStats?.[j.id];
+                      const balStr = jarStat !== undefined ? ` [Số dư: ${formatCurrency(jarStat.balance)}]` : '';
+                      return (
+                        <option key={j.id} value={j.id}>{j.name} ({j.code}){balStr}</option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
-              <p className="text-muted text-sm mt-1">
+
+              {stats?.jarStats?.[fromJarId] && (
+                <div className="flex-between text-xs mt-1 px-1">
+                  <span className="text-muted">
+                    Số dư khả dụng hũ nguồn: <b className={stats.jarStats[fromJarId].balance >= 0 ? 'text-success' : 'text-danger'}>{formatCurrency(stats.jarStats[fromJarId].balance)}</b>
+                  </span>
+                  {parsedAmount > stats.jarStats[fromJarId].balance && stats.jarStats[fromJarId].balance >= 0 && (
+                    <span className="text-warning font-semibold">⚠️ Chuyển lớn hơn số dư hiện có</span>
+                  )}
+                </div>
+              )}
+
+              <p className="text-muted text-sm mt-2">
                 💡 Dùng tính năng này khi một hũ chi vượt định mức (VD: Thiết yếu) và bạn muốn bù tiền từ hũ khác (VD: Hưởng thụ).
               </p>
             </div>

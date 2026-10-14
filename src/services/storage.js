@@ -73,14 +73,42 @@ export function computeFinancialStats(data, selectedMonth) {
       ...jar,
       incomeAllocated: 0,
       totalSpent: 0,
+      transferredIn: 0,
+      transferredOut: 0,
       balance: 0,
-      budget: jar.defaultBudget || 0
+      budget: jar.defaultBudget || 0,
+      effectiveBudget: jar.defaultBudget || 0
     };
   });
 
   // Tính toán luồng tiền từ các giao dịch
   filteredTx.forEach(tx => {
     const amt = Number(tx.amount) || 0;
+
+    // Nhận diện giao dịch chuyển quỹ nội bộ giữa các hũ
+    const isTransfer = tx.categoryId === 'cat-transfer' || 
+                       tx.type === 'transfer' || 
+                       (tx.id && (tx.id.startsWith('tx-tf-out-') || tx.id.startsWith('tx-tf-in-')));
+
+    if (isTransfer) {
+      // Chuyển quỹ nội bộ: Không tính vào Tổng Thu Nhập hay Tổng Chi Tiêu
+      const isOut = tx.transferType === 'out' || 
+                    (tx.id && tx.id.startsWith('tx-tf-out-')) || 
+                    tx.type === 'expense';
+      const targetJarId = tx.jarId || (tx.splitJars && tx.splitJars[0]?.jarId);
+
+      if (isOut) {
+        if (targetJarId && jarStats[targetJarId]) {
+          jarStats[targetJarId].transferredOut += amt;
+        }
+      } else {
+        if (targetJarId && jarStats[targetJarId]) {
+          jarStats[targetJarId].transferredIn += amt;
+        }
+      }
+      return;
+    }
+
     if (tx.type === 'income') {
       totalIncome += amt;
       if (tx.categoryId === 'cat-salary') {
@@ -122,12 +150,20 @@ export function computeFinancialStats(data, selectedMonth) {
     }
   });
 
-  // Tính số dư khả dụng của từng hũ
+  // Tính số dư khả dụng và hạn mức hiệu dụng của từng hũ
   Object.keys(jarStats).forEach(id => {
-    jarStats[id].balance = jarStats[id].incomeAllocated - jarStats[id].totalSpent;
-    jarStats[id].spentPercent = jarStats[id].budget > 0
-      ? Math.min(Math.round((jarStats[id].totalSpent / jarStats[id].budget) * 100), 200)
-      : 0;
+    const jar = jarStats[id];
+    // Số dư = (Thu nhập rót vào + Nhận bù từ hũ khác) - (Chi tiêu thực tế + Chuyển đi hỗ trợ hũ khác)
+    jar.balance = (jar.incomeAllocated + jar.transferredIn) - (jar.totalSpent + jar.transferredOut);
+
+    // Hạn mức hiệu dụng: Hạn mức cơ sở + Tiền bù vào - Tiền chuyển đi
+    jar.effectiveBudget = Math.max(0, jar.budget + jar.transferredIn - jar.transferredOut);
+
+    // Tỷ lệ chi tiêu so với hạn mức khả dụng
+    const activeBudget = jar.effectiveBudget > 0 ? jar.effectiveBudget : jar.budget;
+    jar.spentPercent = activeBudget > 0
+      ? Math.min(Math.round((jar.totalSpent / activeBudget) * 100), 200)
+      : (jar.totalSpent > 0 ? 100 : 0);
   });
 
   const netSavings = totalIncome - totalExpense;
@@ -195,9 +231,21 @@ export function exportTransactionsToCsv(transactions, categories, jars) {
   const headers = ['Mã GD', 'Ngày', 'Loại GD', 'Số tiền (VNĐ)', 'Danh mục', 'Hũ tài chính', 'Tính chất', 'Ghi chú'];
   
   const rows = transactions.map(tx => {
-    const typeLabel = tx.type === 'income' ? 'Thu nhập' : 'Chi tiêu';
-    const natureLabel = tx.isFixed ? 'Cố định' : 'Phát sinh';
-    const catName = catMap[tx.categoryId] || 'Khác';
+    const isTransfer = tx.categoryId === 'cat-transfer' || 
+                       tx.type === 'transfer' || 
+                       (tx.id && (tx.id.startsWith('tx-tf-out-') || tx.id.startsWith('tx-tf-in-')));
+    let typeLabel = tx.type === 'income' ? 'Thu nhập' : 'Chi tiêu';
+    let natureLabel = tx.isFixed ? 'Cố định' : 'Phát sinh';
+
+    if (isTransfer) {
+      const isOut = tx.transferType === 'out' || 
+                    (tx.id && tx.id.startsWith('tx-tf-out-')) || 
+                    tx.type === 'expense';
+      typeLabel = isOut ? 'Chuyển quỹ (Đi)' : 'Chuyển quỹ (Đến)';
+      natureLabel = 'Điều chuyển';
+    }
+
+    const catName = catMap[tx.categoryId] || (isTransfer ? 'Điều chuyển quỹ' : 'Khác');
     const jarName = tx.jarId === 'all' ? 'Tất cả 6 hũ' : (jarMap[tx.jarId] || 'Thiết yếu');
     const cleanNote = (tx.note || '').replace(/"/g, '""');
 

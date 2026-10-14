@@ -43,7 +43,10 @@ export default function AnalyticsView({
 
   const categorySpending = {};
   filteredTransactions.forEach(tx => {
-    if (tx.type === 'expense') {
+    const isTransfer = tx.categoryId === 'cat-transfer' || 
+                       tx.type === 'transfer' || 
+                       (tx.id && (tx.id.startsWith('tx-tf-out-') || tx.id.startsWith('tx-tf-in-')));
+    if (tx.type === 'expense' && !isTransfer) {
       const catId = tx.categoryId || 'cat-other-exp';
       categorySpending[catId] = (categorySpending[catId] || 0) + (Number(tx.amount) || 0);
     }

@@ -53,9 +53,20 @@ export default function TransactionsView({
         }
       }
 
+      // Nhận diện chuyển quỹ
+      const isTransfer = tx.categoryId === 'cat-transfer' || 
+                         tx.type === 'transfer' || 
+                         (tx.id && (tx.id.startsWith('tx-tf-out-') || tx.id.startsWith('tx-tf-in-')));
+
       // Loại GD
-      if (filterType !== 'all' && tx.type !== filterType) {
-        return false;
+      if (filterType !== 'all') {
+        if (filterType === 'transfer') {
+          if (!isTransfer) return false;
+        } else if (filterType === 'income') {
+          if (isTransfer || tx.type !== 'income') return false;
+        } else if (filterType === 'expense') {
+          if (isTransfer || tx.type !== 'expense') return false;
+        }
       }
 
       // Tính chất cố định vs phát sinh
@@ -85,11 +96,20 @@ export default function TransactionsView({
   const stats = useMemo(() => {
     let inc = 0;
     let exp = 0;
+    let transfer = 0;
     filteredList.forEach(t => {
-      if (t.type === 'income') inc += Number(t.amount) || 0;
-      if (t.type === 'expense') exp += Number(t.amount) || 0;
+      const isTransfer = t.categoryId === 'cat-transfer' || 
+                         t.type === 'transfer' || 
+                         (t.id && (t.id.startsWith('tx-tf-out-') || t.id.startsWith('tx-tf-in-')));
+      if (isTransfer) {
+        transfer += Number(t.amount) || 0;
+      } else if (t.type === 'income') {
+        inc += Number(t.amount) || 0;
+      } else if (t.type === 'expense') {
+        exp += Number(t.amount) || 0;
+      }
     });
-    return { count: filteredList.length, inc, exp, net: inc - exp };
+    return { count: filteredList.length, inc, exp, net: inc - exp, transfer };
   }, [filteredList]);
 
   return (
@@ -155,6 +175,12 @@ export default function TransactionsView({
             >
               Thu nhập
             </button>
+            <button
+              className={`filter-pill ${filterType === 'transfer' ? 'active' : ''}`}
+              onClick={() => setFilterType('transfer')}
+            >
+              Chuyển hũ
+            </button>
           </div>
 
           <div className="filter-pill-group">
@@ -213,6 +239,9 @@ export default function TransactionsView({
         <div className="summary-amounts">
           <span className="text-success font-semibold">Thu: +{formatCurrency(stats.inc)}</span>
           <span className="text-danger font-semibold">Chi: -{formatCurrency(stats.exp)}</span>
+          {stats.transfer > 0 && (
+            <span className="text-primary-color font-semibold">Chuyển quỹ: {formatCurrency(stats.transfer)}</span>
+          )}
           <span className="text-muted">Chênh lệch: <b className={stats.net >= 0 ? 'text-primary-color' : 'text-danger'}>{formatCurrency(stats.net)}</b></span>
         </div>
       </div>
@@ -252,8 +281,14 @@ export default function TransactionsView({
                 </thead>
                 <tbody>
                   {filteredList.map(tx => {
-                    const cat = catMap[tx.categoryId] || { name: 'Khác', icon: 'Tag', color: '#6366f1' };
-                    const isInc = tx.type === 'income';
+                    const isTransfer = tx.categoryId === 'cat-transfer' || 
+                                       tx.type === 'transfer' || 
+                                       (tx.id && (tx.id.startsWith('tx-tf-out-') || tx.id.startsWith('tx-tf-in-')));
+                    const isTransferOut = isTransfer && (tx.transferType === 'out' || (tx.id && tx.id.startsWith('tx-tf-out-')) || tx.type === 'expense');
+                    const cat = isTransfer 
+                      ? { name: 'Chuyển quỹ nội bộ', icon: 'ArrowLeftRight', color: '#6366f1' }
+                      : (catMap[tx.categoryId] || { name: 'Khác', icon: 'Tag', color: '#6366f1' });
+                    const isInc = !isTransfer && tx.type === 'income';
                     const jar = jarMap[tx.jarId];
 
                     return (
@@ -302,9 +337,13 @@ export default function TransactionsView({
                           )}
                         </td>
 
-                        {/* Tính chất Cố định / Phát sinh */}
+                        {/* Tính chất Cố định / Phát sinh / Chuyển quỹ */}
                         <td className="tx-nature-col">
-                          {tx.type === 'expense' ? (
+                          {isTransfer ? (
+                            <span className="badge badge-transfer">
+                              {isTransferOut ? 'Chuyển đi' : 'Nhận bù'}
+                            </span>
+                          ) : tx.type === 'expense' ? (
                             <span className={`badge ${tx.isFixed ? 'badge-fixed' : 'badge-variable'}`}>
                               {tx.isFixed ? 'Cố định' : 'Phát sinh'}
                             </span>
@@ -314,8 +353,12 @@ export default function TransactionsView({
                         </td>
 
                         {/* Số tiền */}
-                        <td className={`tx-amount-col text-right ${isInc ? 'text-success font-bold' : 'text-danger font-semibold'}`}>
-                          {isInc ? '+' : '-'}{formatCurrency(tx.amount)}
+                        <td className={`tx-amount-col text-right ${
+                          isTransfer 
+                            ? (isTransferOut ? 'text-warning font-semibold' : 'text-primary-color font-semibold')
+                            : (isInc ? 'text-success font-bold' : 'text-danger font-semibold')
+                        }`}>
+                          {isTransfer ? (isTransferOut ? '-' : '+') : (isInc ? '+' : '-')}{formatCurrency(tx.amount)}
                         </td>
 
                         {/* Thao tác */}
@@ -353,8 +396,14 @@ export default function TransactionsView({
             {/* Mobile Card List View (Dedicated for smartphone viewports) */}
             <div className="mobile-tx-cards-wrap">
               {filteredList.map(tx => {
-                const cat = catMap[tx.categoryId] || { name: 'Khác', icon: 'Tag', color: '#6366f1' };
-                const isInc = tx.type === 'income';
+                const isTransfer = tx.categoryId === 'cat-transfer' || 
+                                   tx.type === 'transfer' || 
+                                   (tx.id && (tx.id.startsWith('tx-tf-out-') || tx.id.startsWith('tx-tf-in-')));
+                const isTransferOut = isTransfer && (tx.transferType === 'out' || (tx.id && tx.id.startsWith('tx-tf-out-')) || tx.type === 'expense');
+                const cat = isTransfer 
+                  ? { name: 'Chuyển quỹ nội bộ', icon: 'ArrowLeftRight', color: '#6366f1' }
+                  : (catMap[tx.categoryId] || { name: 'Khác', icon: 'Tag', color: '#6366f1' });
+                const isInc = !isTransfer && tx.type === 'income';
                 const jar = jarMap[tx.jarId];
 
                 return (
@@ -375,8 +424,12 @@ export default function TransactionsView({
                         </div>
                       </div>
 
-                      <div className={`mobile-tx-amount font-bold ${isInc ? 'text-success' : 'text-danger'}`}>
-                        {isInc ? '+' : '-'}{formatCurrency(tx.amount)}
+                      <div className={`mobile-tx-amount font-bold ${
+                        isTransfer 
+                          ? (isTransferOut ? 'text-warning' : 'text-primary-color')
+                          : (isInc ? 'text-success' : 'text-danger')
+                      }`}>
+                        {isTransfer ? (isTransferOut ? '-' : '+') : (isInc ? '+' : '-')}{formatCurrency(tx.amount)}
                       </div>
                     </div>
 
@@ -388,7 +441,11 @@ export default function TransactionsView({
 
                     <div className="mobile-tx-bottom">
                       <div className="mobile-tx-tags">
-                        {tx.type === 'expense' ? (
+                        {isTransfer ? (
+                          <span className="badge badge-transfer">
+                            {isTransferOut ? 'Chuyển đi' : 'Nhận bù'}
+                          </span>
+                        ) : tx.type === 'expense' ? (
                           <span className={`badge ${tx.isFixed ? 'badge-fixed' : 'badge-variable'}`}>
                             {tx.isFixed ? 'Cố định' : 'Phát sinh'}
                           </span>
