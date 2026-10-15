@@ -377,6 +377,7 @@ export default function App() {
             <DashboardView
               stats={stats}
               data={data}
+              selectedMonth={selectedMonth}
               onOpenTxModal={handleOpenTxModal}
               setActiveTab={setActiveTab}
               onPayBill={handlePayBill}
@@ -427,6 +428,7 @@ export default function App() {
             <AnalyticsView
               stats={stats}
               data={data}
+              selectedMonth={selectedMonth}
             />
           )}
         </main>

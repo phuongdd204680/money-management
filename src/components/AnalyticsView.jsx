@@ -10,11 +10,13 @@ import {
   ArrowRight
 } from 'lucide-react';
 import Icon from './Icon';
+import MonthlySpendingChart from './MonthlySpendingChart';
 import { formatCurrency } from '../services/storage';
 
 export default function AnalyticsView({
   stats,
-  data
+  data,
+  selectedMonth
 }) {
   const {
     totalIncome,
@@ -104,7 +106,16 @@ export default function AnalyticsView({
         </div>
       </div>
 
-      {/* 2. Hàng Biểu Đồ Trực Quan */}
+      {/* 2. Biểu Đồ Thống Kê Chi Tiêu Trong Tháng (Xu Hướng Theo Ngày - Cột & Đường) */}
+      <MonthlySpendingChart
+        transactions={filteredTransactions}
+        selectedMonth={selectedMonth}
+        categories={data.categories}
+        jars={data.jars}
+        isCompact={false}
+      />
+
+      {/* 3. Hàng Biểu Đồ Trực Quan (Cơ cấu 6 Hũ & Top Danh Mục) */}
       <div className="analytics-grid">
         {/* Biểu Đồ Donut 6 Hũ */}
         <div className="card">

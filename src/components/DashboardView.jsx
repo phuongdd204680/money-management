@@ -15,11 +15,13 @@ import {
   Percent
 } from 'lucide-react';
 import Icon from './Icon';
+import MonthlySpendingChart from './MonthlySpendingChart';
 import { formatCurrency, formatDate } from '../services/storage';
 
 export default function DashboardView({
   stats,
   data,
+  selectedMonth,
   onOpenTxModal,
   setActiveTab,
   onPayBill
@@ -271,6 +273,18 @@ export default function DashboardView({
           ))}
         </section>
       )}
+
+      {/* 2.5. Biểu Đồ Thống Kê Diễn Biến Chi Tiêu Tháng Này */}
+      <section className="dashboard-chart-section">
+        <MonthlySpendingChart
+          transactions={stats.filteredTransactions}
+          selectedMonth={selectedMonth}
+          categories={data.categories}
+          jars={data.jars}
+          isCompact={true}
+          onNavigateAnalytics={() => setActiveTab('analytics')}
+        />
+      </section>
 
       {/* 3. Hệ Thống 6 Hũ Tài Chính (6 Jars Grid) */}
       <section className="jars-section">
