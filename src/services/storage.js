@@ -21,6 +21,90 @@ export function loadFinData() {
   }
 }
 
+// Gộp thông minh dữ liệu giữa máy cục bộ và đám mây (Smart Merge)
+// Ngăn chặn hoàn toàn việc ghi đè xóa mất giao dịch khi người dùng đăng nhập
+export function mergeFinancialData(localData, cloudData) {
+  if (!cloudData) return localData;
+  if (!localData) return cloudData;
+
+  // 1. Transactions: Gộp danh sách giao dịch không trùng lặp theo ID
+  const txMap = new Map();
+
+  // Ưu tiên nạp dữ liệu Cloud trước
+  (cloudData.transactions || []).forEach(tx => {
+    if (tx && tx.id) {
+      txMap.set(tx.id, tx);
+    }
+  });
+
+  // Bổ sung các giao dịch mới từ Local data mà Cloud chưa có
+  (localData.transactions || []).forEach(tx => {
+    if (tx && tx.id) {
+      if (!txMap.has(tx.id)) {
+        // Giao dịch mới nhập khi offline / logged out -> Giữ lại!
+        txMap.set(tx.id, tx);
+      }
+    }
+  });
+
+  // Sắp xếp lại theo ngày giảm dần (mới nhất lên đầu)
+  const mergedTransactions = Array.from(txMap.values()).sort((a, b) => {
+    const timeA = a.date ? new Date(a.date).getTime() : 0;
+    const timeB = b.date ? new Date(b.date).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  // 2. Recurring Bills: Hợp nhất theo ID và cập nhật trạng thái thanh toán mới nhất
+  const billMap = new Map();
+  (cloudData.recurringBills || []).forEach(b => {
+    if (b && b.id) billMap.set(b.id, b);
+  });
+  (localData.recurringBills || []).forEach(b => {
+    if (b && b.id) {
+      if (!billMap.has(b.id)) {
+        billMap.set(b.id, b);
+      } else {
+        const existing = billMap.get(b.id);
+        if (b.lastPaidMonth && (!existing.lastPaidMonth || b.lastPaidMonth > existing.lastPaidMonth)) {
+          billMap.set(b.id, { ...existing, lastPaidMonth: b.lastPaidMonth });
+        }
+      }
+    }
+  });
+  const mergedBills = Array.from(billMap.values());
+
+  // 3. Categories: Hợp nhất danh mục
+  const catMap = new Map();
+  (cloudData.categories || []).forEach(c => {
+    if (c && c.id) catMap.set(c.id, c);
+  });
+  (localData.categories || []).forEach(c => {
+    if (c && c.id && !catMap.has(c.id)) {
+      catMap.set(c.id, c);
+    }
+  });
+  const mergedCategories = Array.from(catMap.values());
+
+  // 4. Jars: Ưu tiên Cloud cấu hình, nếu thiếu thì fallback sang local
+  const mergedJars = (cloudData.jars && cloudData.jars.length > 0)
+    ? cloudData.jars
+    : (localData.jars || []);
+
+  // 5. Settings: Hợp nhất settings
+  const mergedSettings = {
+    ...(localData.settings || {}),
+    ...(cloudData.settings || {})
+  };
+
+  return {
+    jars: mergedJars,
+    categories: mergedCategories,
+    transactions: mergedTransactions,
+    recurringBills: mergedBills,
+    settings: mergedSettings
+  };
+}
+
 // Lưu dữ liệu vào LocalStorage
 export function saveFinData(data) {
   try {

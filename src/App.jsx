@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import './App.css';
 
 import { 
   loadFinData, 
   saveFinData, 
+  mergeFinancialData,
   computeFinancialStats, 
   exportTransactionsToCsv 
 } from './services/storage';
@@ -37,31 +38,16 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
 
   // Tham chiếu để tránh loop đồng bộ
   const isCloudLoading = useRef(false);
 
-  // Lắng nghe trạng thái đăng nhập Supabase
-  useEffect(() => {
-    getCurrentUser().then(user => {
-      if (user) {
-        handleUserLoggedIn(user);
-      }
-    });
-
-    const unsubscribe = subscribeToAuth(user => {
-      if (user) {
-        handleUserLoggedIn(user);
-      } else {
-        setCurrentUser(null);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
+  // Key ghi nhận người dùng đã từng đăng nhập trước đó
+  const HAD_SESSION_KEY = 'finflow_had_authenticated_session';
 
   // Xử lý khi người dùng đăng nhập thành công
-  const handleUserLoggedIn = async (user) => {
+  const handleUserLoggedIn = useCallback(async (user) => {
     setCurrentUser(user);
     isCloudLoading.current = true;
     setIsSyncing(true);
@@ -69,9 +55,20 @@ export default function App() {
     try {
       const cloudData = await fetchCloudData(user.id);
       if (cloudData && cloudData.jars && cloudData.transactions) {
-        // Có dữ liệu trên Cloud -> nạp vào ứng dụng
-        setData(cloudData);
-        saveFinData(cloudData);
+        // Áp dụng Smart Merge: Hợp nhất thông minh giữa Local Data và Cloud Data
+        // Đảm bảo không bao giờ làm mất các giao dịch nhập lúc offline hoặc chưa đăng nhập!
+        setData(prevLocalData => {
+          const mergedData = mergeFinancialData(prevLocalData, cloudData);
+          saveFinData(mergedData);
+
+          // Nếu có giao dịch mới từ local được gộp vào, đồng bộ ngay lên Cloud
+          const localOnlyCount = mergedData.transactions.length - (cloudData.transactions || []).length;
+          if (localOnlyCount > 0) {
+            syncCloudData(user.id, mergedData);
+          }
+
+          return mergedData;
+        });
       } else {
         // Tài khoản mới chưa có dữ liệu trên Cloud -> Tải dữ liệu hiện tại lên Cloud
         await syncCloudData(user.id, data);
@@ -84,11 +81,46 @@ export default function App() {
         isCloudLoading.current = false;
       }, 500);
     }
-  };
+  }, [data]);
+
+  // Lắng nghe trạng thái đăng nhập Supabase
+  useEffect(() => {
+    const checkInitialSession = async () => {
+      const user = await getCurrentUser();
+      if (user) {
+        localStorage.setItem(HAD_SESSION_KEY, 'true');
+        handleUserLoggedIn(user);
+      } else {
+        // Kiểm tra xem trước đó người dùng có từng đăng nhập mà giờ bị văng ra không (hết hạn 30 ngày)
+        const hadSession = localStorage.getItem(HAD_SESSION_KEY);
+        if (hadSession) {
+          setSessionExpiredNotice(true);
+        }
+      }
+    };
+    checkInitialSession();
+
+    const unsubscribe = subscribeToAuth((user, event) => {
+      if (user) {
+        localStorage.setItem(HAD_SESSION_KEY, 'true');
+        setSessionExpiredNotice(false);
+        handleUserLoggedIn(user);
+      } else {
+        if (event === 'SIGNED_OUT' && localStorage.getItem(HAD_SESSION_KEY)) {
+          setSessionExpiredNotice(true);
+        }
+        setCurrentUser(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [handleUserLoggedIn]);
 
   // Đăng xuất khỏi Cloud
   const handleSignOut = async () => {
     if (window.confirm('Bạn có muốn đăng xuất khỏi tài khoản Cloud? Dữ liệu trên máy sẽ tiếp tục được lưu vào LocalStorage.')) {
+      localStorage.removeItem(HAD_SESSION_KEY);
+      setSessionExpiredNotice(false);
       await signOut();
       setCurrentUser(null);
     }
@@ -346,6 +378,24 @@ export default function App() {
     setData(emptyData);
   };
 
+  // Đếm số lượng giao dịch trong tháng đang chọn
+  const txCountForSelectedMonth = useMemo(() => {
+    if (!data.transactions) return 0;
+    return data.transactions.filter(t => t.date && t.date.startsWith(selectedMonth)).length;
+  }, [data.transactions, selectedMonth]);
+
+  // Danh sách các tháng có dữ liệu giao dịch
+  const monthsWithData = useMemo(() => {
+    if (!data.transactions) return [];
+    const set = new Set();
+    data.transactions.forEach(t => {
+      if (t.date && t.date.length >= 7) {
+        set.add(t.date.slice(0, 7));
+      }
+    });
+    return Array.from(set).sort();
+  }, [data.transactions]);
+
   // Khôi phục dữ liệu từ JSON tải lên
   const handleImportData = (importedData) => {
     setData(importedData);
@@ -353,6 +403,24 @@ export default function App() {
 
   return (
     <div className="app-container">
+      {/* Thông báo phiên đăng nhập hết hạn (sau 30 ngày) */}
+      {sessionExpiredNotice && !currentUser && (
+        <div className="session-alert-banner">
+          <div className="session-alert-content">
+            <span className="session-alert-icon">⚠️</span>
+            <span>
+              <strong>Phiên đăng nhập Cloud đã hết hạn (sau 30 ngày):</strong> Dữ liệu của bạn vẫn an toàn. Vui lòng bấm đăng nhập lại để tiếp tục tự động đồng bộ đám mây.
+            </span>
+          </div>
+          <button 
+            className="btn btn-primary btn-sm"
+            onClick={() => setIsAuthModalOpen(true)}
+          >
+            Đăng nhập lại ngay
+          </button>
+        </div>
+      )}
+
       {/* 1. Header Bar */}
       <Header
         activeTab={activeTab}
@@ -368,6 +436,8 @@ export default function App() {
         currentUser={currentUser}
         onSignOut={handleSignOut}
         isSyncing={isSyncing}
+        txCountForSelectedMonth={txCountForSelectedMonth}
+        monthsWithData={monthsWithData}
       />
 
       {/* 2. Main Content Views */}
