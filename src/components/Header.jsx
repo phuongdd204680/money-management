@@ -33,9 +33,7 @@ export default function Header({
   onExportCsv,
   currentUser,
   onSignOut,
-  isSyncing,
-  txCountForSelectedMonth = 0,
-  monthsWithData = []
+  isSyncing
 }) {
   // Chuyển tháng trước / tháng sau
   const handleMonthChange = (offset) => {
@@ -98,12 +96,6 @@ export default function Header({
             <div className="month-display" onClick={handleCurrentMonth} title="Nhấn để về tháng hiện tại">
               <Calendar size={16} className="text-primary-color" />
               <span className="month-text">Tháng {currentMonth} / {currentYear}</span>
-              <span 
-                className={`month-tx-pill ${txCountForSelectedMonth > 0 ? 'has-tx' : 'empty-tx'}`}
-                title={`Tháng ${currentMonth}/${currentYear} có ${txCountForSelectedMonth} giao dịch`}
-              >
-                {txCountForSelectedMonth > 0 ? `${txCountForSelectedMonth} GD` : '0 GD'}
-              </span>
               {!isCurrentMonth && (
                 <span className="current-month-jump-pill">Về hiện tại</span>
               )}

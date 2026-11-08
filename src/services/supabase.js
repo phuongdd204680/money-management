@@ -129,7 +129,7 @@ export function subscribeToAuth(callback) {
   if (!client) return () => {};
 
   const { data: { subscription } } = client.auth.onAuthStateChange((event, session) => {
-    callback(session ? session.user : null, event);
+    callback(session ? session.user : null);
   });
 
   return () => {
